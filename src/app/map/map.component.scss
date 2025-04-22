@@ -1,0 +1,12 @@
+:host {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.map-container {
+    width: 95vw;
+    height: 95vh;
+    image-rendering: pixelated;
+}
