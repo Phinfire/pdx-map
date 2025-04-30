@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+public/test.eu4
+public/test.json
+public/test.eu4
