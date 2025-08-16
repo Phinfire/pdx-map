@@ -1,5 +1,4 @@
 @use '@angular/material' as mat;
-
 .discord {
     display: flex;
     flex-direction: row;
@@ -12,6 +11,16 @@
     gap: 12px;
     flex-wrap: wrap;
     margin-top: 12px;
+    width: 15em;
+    height: 3em;
+}
+
+.login-button:hover {
+    background-color: var(--lighter-background-color);
+}
+
+.login-button:active {
+    background-color: var(--background-color);
 }
 
 .avatar-container {

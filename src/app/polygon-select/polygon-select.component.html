@@ -1,0 +1,16 @@
+<div #rendererContainer class="map-container">
+    <div class="button-group">
+        <button class="corner-button" (click)="homeButtonClicked(); $event.stopPropagation()" title="Fit camera to view all polygons">
+            <mat-icon>home</mat-icon>
+        </button>
+        <button class="corner-button" (click)="refreshButtonClicked(); $event.stopPropagation()" title="Reset to initial selection">
+            <mat-icon>refresh</mat-icon>
+        </button>
+        <button class="corner-button" (click)="storeCurrentLockSelectionToFile(); $event.stopPropagation()" title="Save current selection">
+            <mat-icon>save</mat-icon>
+        </button>
+        <button class="corner-button" (click)="loadSelectionFromFile(); $event.stopPropagation()" title="Load selection">
+            <mat-icon>menu_book</mat-icon>
+        </button>
+    </div>
+</div>

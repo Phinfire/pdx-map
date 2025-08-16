@@ -6,7 +6,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Delius&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
 
 :root {
     --background-color: rgb(32, 32, 32);
@@ -36,6 +35,10 @@
     --faded-border-color: rgba(0, 0, 0, 0.2);
     --faded-text-color: rgba(0, 0, 0, 0.5);
     --void-color: rgb(240, 240, 240);
+}
+
+h2 {
+    font-size: 2em;
 }
 
 html,

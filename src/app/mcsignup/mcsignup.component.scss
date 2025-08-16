@@ -1,0 +1,97 @@
+@use '@angular/material' as mat;
+
+:host {
+    background-color: var(--void-color);
+    color: var(--text-color);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    max-height: 100%;
+    @include mat.table-overrides((
+        row-item-label-text-size: 1.4em,
+        header-container-height: 0em,
+        header-headline-size: 0em,
+        row-item-outline-color: var(--background-color),
+        row-item-label-text-color: var(--text-color),
+        row-item-outline-width: 1px,
+        header-headline-color: none,
+        header-headline-font: var(--font-family) var(--font-weight-bold),
+        row-item-label-text-font: var(--font-family) var(--font-weight-regular)
+    ));
+}
+
+
+
+.main {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    width: 95%;
+    height: 95%;
+    border: 1px solid var(--faded-border-color);
+    background-color: var(--background-color);
+    padding: 1em;
+}
+
+.render-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    height: 100%;
+}
+
+.table-container {
+    width: 20%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0em 1em;
+    h2 {
+        font-size: 2.5em;
+        margin-bottom: 1em;
+        text-decoration: underline;
+        letter-spacing: 0.05em;
+    }
+    
+    table {
+        width: 100%;
+        
+        .mat-mdc-row {
+            cursor: move;
+            
+            &:hover {
+                background-color: var(--faded-border-color);
+            }
+            
+            &.cdk-drag-preview {
+                box-shadow: 0 3px 3px -3px rgba(0, 0, 0, 0.2),
+                           0 3px 4px 0 rgba(0, 0, 0, 0.14),
+                           0 1px 8px 0 rgba(0, 0, 0, 0.12);
+            }
+            
+            &.cdk-drag-placeholder {
+                opacity: 0.4;
+            }
+        }
+        
+        .mat-mdc-header-cell {
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            background-color: var(--background-color);
+            font-family: var(--font-family) !important;
+            font-size: 1.4em !important;
+        }
+        
+        .mat-mdc-cell {
+            background-color: var(--background-color);
+            padding: 0.5em;
+            font-family: var(--font-family) !important;
+            font-size: 1em !important;
+        }
+    }
+}
