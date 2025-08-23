@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { RendererConfigProvider } from '../polygon-select/RendererConfigProvider';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ThreeService {
 
-    public static addGeoJsonPolygons(geojson: any, mapScale: number, color: number, inactiveColor: number, thickness: number, addFunc: (mesh: any) => void) {
+    public static addGeoJsonPolygons(geojson: any, mapScale: number, configProvider: RendererConfigProvider, thickness: number, addFunc: (mesh: any) => void) {
         if (!geojson || !geojson.features) return;
         const allCoords = ThreeService.loadCoordinates(geojson);
         const boundingBox = ThreeService.calculateBoundingBox(allCoords);
@@ -43,7 +44,8 @@ export class ThreeService {
         const nonInteractiveGeos = [];
         for (const [key, geos] of key2Geos) {
             const mergedGeo = mergeGeometries(geos);
-            const interactive = key2isInteractive.get(key);
+            const interactive = key2isInteractive.get(key)!;
+            const color = configProvider.getColor(key, interactive, false, false);
             if (interactive) {
                 const mesh = ThreeService.meshFromGeometry(mergedGeo, color, interactive, key);
                 addFunc(mesh);
@@ -51,6 +53,7 @@ export class ThreeService {
                 nonInteractiveGeos.push(mergedGeo);
             }
         }
+        const inactiveColor = configProvider.getColor("", false, false, false);
         const nonInteractiveMesh = ThreeService.meshFromGeometry(mergeGeometries(nonInteractiveGeos), inactiveColor, false, "");
         addFunc(nonInteractiveMesh);
 

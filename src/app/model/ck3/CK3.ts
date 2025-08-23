@@ -3,7 +3,6 @@ import { Jomini } from "jomini";
 import { Trait } from "./Trait";
 import { Skill } from "./enum/Skill";
 import { RGB } from "../../util/RGB";
-import { I } from "@angular/cdk/keycodes";
 import { Building } from "./Building";
 export class CK3 {
 

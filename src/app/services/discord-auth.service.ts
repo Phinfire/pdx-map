@@ -7,18 +7,30 @@ export interface DiscordUser {
     discriminator: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+    providedIn: 'root'
+})
 export class DiscordAuthService {
     private clientId = '1403891748371038462';
-    private redirectUri = "http://localhost:4200/pdx/lab";
+    private redirectUri: string | null = null;
     private backendAuthUrl = 'http://localhost:3000/api/discord-auth';
 
+    setRedirectUri(uri: string) {
+        this.redirectUri = uri;
+    }
+
     login() {
+        if (!this.redirectUri) {
+            throw new Error('Redirect URI is not set');
+        }
         const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${this.clientId}&redirect_uri=${encodeURIComponent(this.redirectUri)}&response_type=code&scope=identify`;
         window.location.href = discordAuthUrl;
     }
 
     async getUser(): Promise<DiscordUser | null> {
+        if (!this.redirectUri) {
+            throw new Error('Redirect URI is not set');
+        }
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         if (!code) return null;

@@ -9,10 +9,14 @@ import { Ck3Player } from '../model/ck3/Player';
 import { Jomini } from 'jomini';
 import JSZip from 'jszip';
 import { DiscordLoginComponent } from '../discord-login/discord-login.component';
+import { MatButton, MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
 
+// TableComponent, DiscordLoginComponent
 @Component({
     selector: 'app-lab',
-    imports: [TableComponent, DiscordLoginComponent],
+    imports: [MatButtonModule, MatDividerModule, MatIconModule],
     templateUrl: './lab.component.html',
     styleUrl: './lab.component.scss'
 })

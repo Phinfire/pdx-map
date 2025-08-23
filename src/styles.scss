@@ -1,42 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Caesar+Dressing&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Eagle+Lake&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Delius&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
-
-:root {
-    --background-color: rgb(32, 32, 32);
-    --lighter-background-color: rgb(37, 37, 37);
-    --text-color: rgba(255, 255, 255, 0.9);
-    /*--text-color: rgb(220, 220, 157);*/
-    --border-color: var(--text-color);
-    --faded-border-color: rgba(255, 255, 255, 0.2);
-    --faded-text-color: rgba(255, 255, 255, 0.5);
-    /*--font-family: 'Titillium Web', sans-serif;*/
-    --hacker-font: 'Inconsolata', monospace;
-    /*--font-family: "Delius", cursive;*/
-    --font-family: "Manrope", sans-serif;
-    --void-color: rgb(20, 20, 25);
-
-    --dark-theme-text-color: rgb(255, 255, 255);
-    --dark-theme-background-color: rgb(32, 32, 32);
-    --light-theme-text-color: rgb(0, 0, 0);
-    --light-theme-background-color: rgb(255, 255, 255);
-}
-
-.light-theme {
-    --background-color: var(--light-theme-background-color);
-    --lighter-background-color: rgb(240, 240, 240);
-    --text-color: var(--light-them-text-color);
-    --border-color: var(--text-color);
-    --faded-border-color: rgba(0, 0, 0, 0.2);
-    --faded-text-color: rgba(0, 0, 0, 0.5);
-    --void-color: rgb(240, 240, 240);
-}
-
 h2 {
     font-size: 2em;
 }
@@ -76,5 +40,38 @@ body {
 }
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.cdk-drag-preview {
+    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.4),
+        0 8px 16px -8px rgba(0, 0, 0, 0.3),
+        0 4px 12px 0 rgba(0, 0, 0, 0.2) !important;
+    background-color: var(--background-color) !important;
+    border: 2px solid var(--text-color) !important;
+    border-radius: 6px !important;
+    opacity: 0.95 !important;
+    transform: scale(1.03) rotate(1.5deg) !important;
+    color: var(--text-color) !important;
+    filter: brightness(1.15) !important;
+    z-index: 9999 !important;
+
+    .mat-mdc-cell:first-child {
+        display: none !important;
+    }
+
+    .mat-mdc-cell {
+        background-color: transparent !important;
+        color: var(--text-color) !important;
+        font-family: var(--font-family) !important;
+        border: none !important;
+    }
+
+    &.mat-mdc-row {
+        background-color: var(--background-color) !important;
+
+        &:hover {
+            background-color: var(--background-color) !important;
+        }
+    }
 }

@@ -1,0 +1,74 @@
+@use '@angular/material' as mat;
+
+html {
+    color-scheme: light dark;
+
+    @include mat.theme((color: (primary: mat.$violet-palette,
+                tertiary: mat.$orange-palette,
+                theme-type: light,
+            ),
+            typography: Roboto,
+            density: 0));
+}
+
+:root {
+    --background-color: rgb(32, 32, 32);
+    --lighter-background-color: rgb(37, 37, 37);
+    --text-color: rgba(255, 255, 255, 0.9);
+    --border-color: var(--text-color);
+    --faded-border-color: rgba(255, 255, 255, 0.2);
+    --faded-text-color: rgba(255, 255, 255, 0.5);
+    --hacker-font: 'Inconsolata', monospace;
+    --font-family: "Manrope", sans-serif;
+    --void-color: rgb(20, 20, 25);
+
+    --dark-theme-text-color: rgb(255, 255, 255);
+    --dark-theme-background-color: rgb(32, 32, 32);
+    --light-theme-text-color: rgb(0, 0, 0);
+    --light-theme-background-color: rgb(255, 255, 255);
+
+    --mat-sys-surface: var(--background-color);
+    --mat-sys-on-surface: var(--text-color);
+    --mat-sys-primary-container: var(--text-color);
+    --mat-sys-on-primary-container: var(--background-color);
+
+
+
+    --mat-sys-secondary-container: var(--lighter-background-color);
+    --mat-sys-on-secondary-container: var(--text-color);
+    
+    --mat-sys-outline: var(--border-color);
+    --mat-sys-primary: var(--text-color);
+}
+
+.light-theme {
+    --background-color: var(--light-theme-background-color);
+    --lighter-background-color: rgb(240, 240, 240);
+    --text-color: var(--light-theme-text-color);
+    --border-color: var(--text-color);
+    --faded-border-color: rgba(0, 0, 0, 0.2);
+    --faded-text-color: rgba(0, 0, 0, 0.5);
+    --void-color: rgb(240, 240, 240);
+
+    --mat-sys-surface: var(--light-theme-background-color);
+    --mat-sys-on-surface: var(--light-theme-text-color);
+    --mat-sys-primary-container: var(--light-theme-text-color);
+    --mat-sys-on-primary-container: var(--light-theme-background-color);
+    --mat-sys-secondary-container: var(--lighter-background-color);
+    --mat-sys-on-secondary-container: var(--light-theme-text-color);
+    --mat-sys-outline: var(--border-color);
+    --mat-sys-primary: var(--light-theme-text-color);
+}
+
+.dark-theme {
+    --background-color: var(--dark-theme-background-color);
+    --lighter-background-color: rgb(37, 37, 37);
+    --text-color: var(--dark-theme-text-color);
+    --border-color: var(--text-color);
+    --faded-border-color: rgba(255, 255, 255, 0.2);
+    --faded-text-color: rgba(255, 255, 255, 0.5);
+    --void-color: rgb(20, 20, 25);
+
+    --mat-sys-surface: var(--dark-theme-background-color);
+    --mat-sys-on-surface: var(--dark-theme-text-color);
+}

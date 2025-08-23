@@ -1,8 +1,11 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
-import { ThreeService } from '../mcsignup/ThreeService';
+import { Component, ElementRef, Input, SimpleChanges, ViewChild } from '@angular/core';
 import * as THREE from 'three';
-import { MapService } from '../map.service';
 import { MatIconModule } from '@angular/material/icon';
+import { RendererConfigProvider } from './RendererConfigProvider';
+
+export class MapMesh {
+
+}
 
 @Component({
     selector: 'app-polygon-select',
@@ -12,20 +15,15 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class PolygonSelectComponent {
 
-    @Input() selectedIds: string[] = [];
+    @Input() rendererConfigProvider: RendererConfigProvider | null = null;
 
-    private readonly CLEAR_COLOR = 0x000000;
-    private readonly INACTIVE_GEOMETRY_COLOR = 0x202020;
-    private readonly GEOMETRY_DEFAULT_COLOR = 0x666666;
-    private readonly GEOMETRY_HOVER_COLOR = 0xc0c0c0;
-    private readonly GEOMETRY_LOCKED_COLOR = 0xffd700;
     private readonly LIGHT_INTENSITY = 2;
     private raycaster = new THREE.Raycaster();
     private mouse = new THREE.Vector2();
     private isMiddleMouseDown = false;
     private isLeftMouseDown = false;
     private lastMousePos: { x: number, y: number } | null = null;
-    private hoveredPolygon: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key?: string }) | null = null;
+    private lastHoveredMesh: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string }) | null = null;
     private needsRaycast = false;
     @ViewChild('rendererContainer', { static: true }) containerRef!: ElementRef;
 
@@ -35,16 +33,18 @@ export class PolygonSelectComponent {
     private animationId!: number;
     private polygons: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string })[] = [];
 
-    constructor(private mapService: MapService) { }
-
     public cameraHeight = 400;
-    public mapScale = 400.0;
-    private readonly THICKNESS = 2;
-    private readonly LOCKED_HEIGHT = 2;
+    public zoomToCursor = true;
+    private readonly LOCKED_HEIGHT = 1;
     private readonly LIFT_HEIGHT = 0.75 * this.LOCKED_HEIGHT;
+    private readonly LOCKED_HOVER_HEIGHT = 0.75 * this.LOCKED_HEIGHT;
     private readonly LIFT_SPEED = 0.5;
 
-    private fitCameraToPolygons(margin: number) {
+    constructor() {
+
+    }
+
+    public fitCameraToPolygons(margin: number) {
         if (!this.polygons.length) return;
         const box = new THREE.Box3();
         this.polygons.forEach(poly => box.expandByObject(poly));
@@ -74,7 +74,7 @@ export class PolygonSelectComponent {
 
         const filename = prompt('Enter a filename for the selection:', 'locked_polygons');
         if (filename === null) {
-            return; // User cancelled
+            return;
         }
 
         const finalFilename = filename.trim() || 'locked_polygons';
@@ -109,25 +109,21 @@ export class PolygonSelectComponent {
         input.click();
     }
 
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes['rendererConfigProvider']) {
+            for (const poly of this.polygons) {
+                this.refreshPolyColor(poly);
+            }
+        }
+    }
+
+    public setMeshes(meshes: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string })[]) {
+        this.scene.add(...meshes);
+        this.polygons.push(...meshes);
+    }
+
     ngOnInit(): void {
         this.initScene();
-        this.mapService.fetchCK3GeoJson(true, false).subscribe((geojson: any) => {
-            ThreeService.addGeoJsonPolygons(geojson, this.mapScale, this.GEOMETRY_DEFAULT_COLOR, this.INACTIVE_GEOMETRY_COLOR, this.THICKNESS, (mesh: any) => {
-                this.scene.add(mesh);
-                this.polygons.push(mesh);
-            });
-            setTimeout(() => this.fitCameraToPolygons(0), 0);
-            const totalTriangles = this.polygons.reduce((total, polygon) => {
-                const geometry = polygon.geometry;
-                if (geometry.index) {
-                    return total + (geometry.index.count / 3);
-                } else {
-                    const positions = geometry.attributes['position'] as THREE.BufferAttribute;
-                    return total + (positions.count / 3);
-                }
-            }, 0);
-            console.log(`Loaded ${this.polygons.length} polygon meshes with ${Math.floor(totalTriangles).toLocaleString()} triangles total`);
-        });
         window.addEventListener('mousemove', this.onMouseMove);
         window.addEventListener('mousedown', this.onMouseDown);
         window.addEventListener('mouseup', this.onMouseUp);
@@ -152,12 +148,10 @@ export class PolygonSelectComponent {
         this.camera = new THREE.PerspectiveCamera(30, container.clientWidth / container.clientHeight, 0.1, 1500);
         this.camera.position.set(0, -5, this.cameraHeight);
         this.camera.lookAt(0, 0, 0);
-
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setClearColor(this.CLEAR_COLOR);
+        this.renderer.setClearColor(this.rendererConfigProvider!.getClearColor());
         this.renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(this.renderer.domElement);
-
         const light = new THREE.DirectionalLight(0xffffff, this.LIGHT_INTENSITY);
         light.position.set(50, 50, 100);
         this.scene.add(light);
@@ -170,7 +164,7 @@ export class PolygonSelectComponent {
         if (this.isMiddleMouseDown && this.lastMousePos) {
             const dx = event.clientX - this.lastMousePos.x;
             const dy = event.clientY - this.lastMousePos.y;
-            const speed = 0.05 * (this.camera.position.z / this.cameraHeight);
+            const speed = 0.2 * (this.camera.position.z / this.cameraHeight);
             this.camera.position.x -= dx * speed;
             this.camera.position.y += dy * speed;
             this.lastMousePos = { x: event.clientX, y: event.clientY };
@@ -189,11 +183,11 @@ export class PolygonSelectComponent {
                 this.raycaster.setFromCamera(this.mouse, this.camera);
                 const intersects = this.raycaster.intersectObjects(this.polygons);
                 if (intersects.length > 0) {
-                    const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean };
+                    const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string };
                     if (!polygon.locked && polygon.interactive) {
                         polygon.locked = true;
-                        (polygon.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_LOCKED_COLOR);
                         polygon.targetZ = this.LOCKED_HEIGHT;
+                        this.refreshPolyColor(polygon);
                     }
                 }
             }
@@ -225,32 +219,48 @@ export class PolygonSelectComponent {
     private onWheel = (event: WheelEvent) => {
         const container = this.containerRef.nativeElement;
         if (container.contains(event.target as Node)) {
-            this.camera.position.z += event.deltaY * 0.20;
-            this.camera.position.z = Math.max(10, Math.min(1000, this.camera.position.z));
+            const zoomFactor = event.deltaY > 0 ? 1.1 : 0.9;
+            const oldZ = this.camera.position.z;
+            const newZ = Math.max(10, Math.min(1000, oldZ * zoomFactor));
+
+            if (this.zoomToCursor) {
+                const rect = container.getBoundingClientRect();
+                const mouseX = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+                const mouseY = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+                const fov = this.camera.fov * (Math.PI / 180);
+                const aspect = container.clientWidth / container.clientHeight;
+                const height = 2 * Math.tan(fov / 2) * oldZ;
+                const width = height * aspect;
+                const worldMouseX = mouseX * width / 2;
+                const worldMouseY = mouseY * height / 2;
+                const zoomRatio = (oldZ - newZ) / oldZ;
+                this.camera.position.x += worldMouseX * zoomRatio;
+                this.camera.position.y += worldMouseY * zoomRatio;
+            }
+
+            this.camera.position.z = newZ;
             event.preventDefault();
         }
     };
 
     private onClick = (event: MouseEvent) => {
         const container = this.containerRef.nativeElement;
-        if (container.contains(event.target as Node)) {
-            this.raycaster.setFromCamera(this.mouse, this.camera);
-            const intersects = this.raycaster.intersectObjects(this.polygons);
-            if (intersects.length > 0) {
-                const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean };
-                if (polygon.interactive) {
-                    polygon.locked = !polygon.locked;
-                    if (polygon.locked) {
-                        (polygon.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_LOCKED_COLOR);
-                        polygon.targetZ = this.LOCKED_HEIGHT;
-                    } else {
-                        (polygon.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_DEFAULT_COLOR);
-                        polygon.targetZ = 0;
-                        if (this.hoveredPolygon === polygon) {
-                            this.hoveredPolygon = null;
-                        }
-                    }
+        if (!container.contains(event.target as Node)) {
+            return;
+        }
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.polygons);
+        if (intersects.length > 0) {
+            const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string };
+            if (polygon.interactive) {
+                polygon.locked = !polygon.locked;
+                if (polygon.locked) {
+                    polygon.targetZ = this.lastHoveredMesh === polygon ? this.LOCKED_HOVER_HEIGHT : this.LOCKED_HEIGHT;
+                } else {
+                    polygon.targetZ = this.lastHoveredMesh === polygon ? this.LIFT_HEIGHT : 0;
                 }
+                this.refreshPolyColor(polygon);
+                this.needsRaycast = true;
             }
         }
     };
@@ -261,30 +271,43 @@ export class PolygonSelectComponent {
             this.needsRaycast = false;
             this.raycaster.setFromCamera(this.mouse, this.camera);
             const intersects = this.raycaster.intersectObjects(this.polygons);
-
             if (intersects.length > 0) {
-                const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean };
-                if (!polygon.locked && polygon.interactive) {
-                    if (this.hoveredPolygon !== polygon) {
-                        if (this.hoveredPolygon && !this.hoveredPolygon.locked) {
-                            (this.hoveredPolygon.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_DEFAULT_COLOR);
-                            this.hoveredPolygon.targetZ = 0;
+                const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string };
+                if (polygon.interactive) {
+                    if (!polygon.locked) {
+                        if (this.lastHoveredMesh !== polygon) {
+                            if (this.lastHoveredMesh && !this.lastHoveredMesh.locked) {
+                                this.lastHoveredMesh.targetZ = 0;
+                            } else if (this.lastHoveredMesh && this.lastHoveredMesh.locked) {
+                                this.lastHoveredMesh.targetZ = this.LOCKED_HEIGHT;
+                            }
+                            polygon.targetZ = this.LIFT_HEIGHT;
                         }
-                        this.hoveredPolygon = polygon;
-                        (polygon.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_HOVER_COLOR);
-                        polygon.targetZ = this.LIFT_HEIGHT;
+                    } else {
+                        if (this.lastHoveredMesh !== polygon) {
+                            if (this.lastHoveredMesh && !this.lastHoveredMesh.locked) {
+                                this.lastHoveredMesh.targetZ = 0;
+                            } else if (this.lastHoveredMesh && this.lastHoveredMesh.locked) {
+                                this.lastHoveredMesh.targetZ = this.LOCKED_HEIGHT;
+                            }
+                            polygon.targetZ = this.LOCKED_HOVER_HEIGHT;
+                        }
                     }
                 } else {
-                    if (this.hoveredPolygon && !this.hoveredPolygon.locked) {
-                        (this.hoveredPolygon.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_DEFAULT_COLOR);
-                        this.hoveredPolygon.targetZ = 0;
-                        this.hoveredPolygon = null;
+                    if (this.lastHoveredMesh && !this.lastHoveredMesh.locked) {
+                        this.lastHoveredMesh.targetZ = 0;
+                    } else if (this.lastHoveredMesh && this.lastHoveredMesh.locked) {
+                        this.lastHoveredMesh.targetZ = this.LOCKED_HEIGHT;
                     }
                 }
-            } else if (this.hoveredPolygon && !this.hoveredPolygon.locked) {
-                (this.hoveredPolygon.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_DEFAULT_COLOR);
-                this.hoveredPolygon.targetZ = 0;
-                this.hoveredPolygon = null;
+                this.setHovered(polygon);
+            } else if (this.lastHoveredMesh) {
+                if (!this.lastHoveredMesh.locked) {
+                    this.lastHoveredMesh.targetZ = 0;
+                } else {
+                    this.lastHoveredMesh.targetZ = this.LOCKED_HEIGHT;
+                }
+                this.setHovered(null);
             }
         }
         this.polygons.forEach(poly => {
@@ -292,22 +315,36 @@ export class PolygonSelectComponent {
                 poly.position.z += (poly.targetZ - poly.position.z) * this.LIFT_SPEED;
             }
         });
-
         this.renderer.render(this.scene, this.camera);
     };
-
-    homeButtonClicked() {
-        this.fitCameraToPolygons(0);
-    }
 
     refreshButtonClicked() {
         this.polygons.forEach(poly => {
             poly.locked = false;
             poly.targetZ = 0;
-            if ((poly.material as THREE.MeshPhongMaterial).color.getHex() === this.GEOMETRY_LOCKED_COLOR) {
-                (poly.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_DEFAULT_COLOR);
-            }
+            this.refreshPolyColor(poly);
         });
+    }
+
+    setHovered(currentlyHovered: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string }) | null) {
+        const localLastHoveredMesh = this.lastHoveredMesh;
+        this.lastHoveredMesh = currentlyHovered;
+        if (localLastHoveredMesh != null) {
+            this.refreshPolyColor(localLastHoveredMesh);
+        }
+        if (currentlyHovered != null) {
+            this.refreshPolyColor(currentlyHovered);
+        }
+    }
+
+    refreshPolyColor(polygon: THREE.Mesh & { key: string, interactive?: boolean, locked?: boolean }) {
+        if (this.rendererConfigProvider) {
+            const interactive = polygon.interactive ?? false;
+            const hover = this.lastHoveredMesh === polygon;
+            const locked = polygon.locked ?? false;
+            const color = this.rendererConfigProvider.getColor(polygon.key, interactive, hover, locked);
+            (polygon.material as THREE.MeshPhongMaterial).color.set(color);
+        }
     }
 
     private setLockedState(keys: string[], locked: boolean) {
@@ -315,15 +352,19 @@ export class PolygonSelectComponent {
             if (keys.includes(poly.key)) {
                 poly.locked = locked;
                 if (locked) {
-                    (poly.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_LOCKED_COLOR);
-                    poly.targetZ = this.LOCKED_HEIGHT;
+                    // If this polygon is currently hovered, set it to locked hover height
+                    if (this.lastHoveredMesh === poly) {
+                        poly.targetZ = this.LOCKED_HOVER_HEIGHT;
+                    } else {
+                        poly.targetZ = this.LOCKED_HEIGHT;
+                    }
                 } else {
-                    (poly.material as THREE.MeshPhongMaterial).color.set(this.GEOMETRY_DEFAULT_COLOR);
                     poly.targetZ = 0;
-                    if (this.hoveredPolygon === poly) {
-                        this.hoveredPolygon = null;
+                    if (this.lastHoveredMesh === poly) {
+                        this.lastHoveredMesh = null;
                     }
                 }
+                this.refreshPolyColor(poly);
             }
         });
     }
