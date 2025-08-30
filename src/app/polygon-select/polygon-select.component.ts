@@ -1,11 +1,7 @@
-import { Component, ElementRef, Input, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, SimpleChanges, ViewChild, NgZone, AfterViewInit } from '@angular/core';
 import * as THREE from 'three';
 import { MatIconModule } from '@angular/material/icon';
 import { RendererConfigProvider } from './RendererConfigProvider';
-
-export class MapMesh {
-
-}
 
 @Component({
     selector: 'app-polygon-select',
@@ -13,11 +9,19 @@ export class MapMesh {
     templateUrl: './polygon-select.component.html',
     styleUrl: './polygon-select.component.scss'
 })
-export class PolygonSelectComponent {
+export class PolygonSelectComponent implements AfterViewInit {
+
+    @ViewChild('rendererContainer', { static: true }) containerRef!: ElementRef;
 
     @Input() rendererConfigProvider: RendererConfigProvider | null = null;
+    @Input() selectionCallback: (key: string, locked: boolean) => void = (key: string, locked: boolean) => {
+        console.log("No callback provided");
+    };
+    @Input() meshBuddiesProvider: (key: string) => string[] = (key: string) => [key];
+    @Input() tooltipProvider: (key: string) => string = (key: string) => key;
 
-    private readonly LIGHT_INTENSITY = 2;
+    private readonly ALLOW_DRAG_SELECTION = false;
+    private readonly LIGHT_INTENSITY = 3;
     private raycaster = new THREE.Raycaster();
     private mouse = new THREE.Vector2();
     private isMiddleMouseDown = false;
@@ -25,13 +29,24 @@ export class PolygonSelectComponent {
     private lastMousePos: { x: number, y: number } | null = null;
     private lastHoveredMesh: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string }) | null = null;
     private needsRaycast = false;
-    @ViewChild('rendererContainer', { static: true }) containerRef!: ElementRef;
 
     private scene!: THREE.Scene;
     private camera!: THREE.PerspectiveCamera;
     private renderer!: THREE.WebGLRenderer;
     private animationId!: number;
-    private polygons: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string })[] = [];
+    private polygons: Map<string, THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string }> = new Map();
+    private resizeObserver!: ResizeObserver;
+    private isRendererInitialized = false;
+    private pendingMeshes: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string })[] = [];
+    
+    public tooltipVisible = false;
+    public tooltipText = '';
+    public tooltipX = 0;
+    public tooltipY = 0;
+    private currentMouseX = 0;
+    private currentMouseY = 0;
+    public tooltipEnabled = false;
+    public tooltipAbove = false;
 
     public cameraHeight = 400;
     public zoomToCursor = true;
@@ -40,12 +55,22 @@ export class PolygonSelectComponent {
     private readonly LOCKED_HOVER_HEIGHT = 0.75 * this.LOCKED_HEIGHT;
     private readonly LIFT_SPEED = 0.5;
 
-    constructor() {
+    constructor(private ngZone: NgZone) {
 
     }
 
+    public forceResize() {
+        this.handleResize();
+    }
+
+    public reinitialize() {
+        this.isRendererInitialized = false;
+        this.pendingMeshes = [];
+        this.initScene();
+    }
+
     public fitCameraToPolygons(margin: number) {
-        if (!this.polygons.length) return;
+        if (!this.polygons.size) return;
         const box = new THREE.Box3();
         this.polygons.forEach(poly => box.expandByObject(poly));
         const size = box.getSize(new THREE.Vector3());
@@ -66,7 +91,7 @@ export class PolygonSelectComponent {
     }
 
     storeCurrentLockSelectionToFile() {
-        const lockedPolygons = this.polygons.filter(poly => poly.locked);
+        const lockedPolygons = Array.from(this.polygons.values()).filter(poly => poly.locked);
         if (lockedPolygons.length === 0) {
             alert('No polygons are currently locked to save.');
             return;
@@ -99,7 +124,7 @@ export class PolygonSelectComponent {
             reader.onload = (event: ProgressEvent<FileReader>) => {
                 try {
                     const keys = JSON.parse(event.target?.result as string);
-                    this.setLockedState(keys, true);
+                    this.setLockedStates(keys, true);
                 } catch (err) {
                     console.error('Failed to parse JSON:', err);
                 }
@@ -109,27 +134,94 @@ export class PolygonSelectComponent {
         input.click();
     }
 
+    exportMapImage() {
+        if (!this.renderer || !this.scene || !this.camera) {
+            alert('Renderer not initialized. Please wait for the map to load.');
+            return;
+        }
+        
+        const filename = prompt('Enter filename for map export:', 'map-export');
+        if (filename === null) {
+            return;
+        }
+        
+        const finalFilename = filename.trim() || 'map-export';
+        
+        // Ensure we have a fresh render
+        this.renderer.render(this.scene, this.camera);
+        
+        // Export current view as PNG
+        this.renderer.domElement.toBlob((blob) => {
+            if (blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `${finalFilename}.png`;
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert('Failed to export image. Please try again.');
+            }
+        }, 'image/png');
+    }
+
     ngOnChanges(changes: SimpleChanges) {
         if (changes['rendererConfigProvider']) {
-            for (const poly of this.polygons) {
+            for (const poly of this.polygons.values()) {
                 this.refreshPolyColor(poly);
             }
         }
     }
 
     public setMeshes(meshes: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string })[]) {
+        if (!this.isRendererInitialized || !this.scene) {
+            // Store meshes to be added once the scene is initialized
+            this.pendingMeshes = [...meshes];
+            return;
+        }
+        
         this.scene.add(...meshes);
-        this.polygons.push(...meshes);
+        meshes.forEach(mesh => {
+            this.polygons.set(mesh.key, mesh);
+        });
+    }
+
+    public removeMesh(key: string) {
+        const mesh = this.polygons.get(key);
+        if (mesh) {
+            this.scene.remove(mesh);
+            this.polygons.delete(key);
+            if (this.lastHoveredMesh === mesh) {
+                this.lastHoveredMesh = null;
+            }
+        }
+    }
+
+    public clearMeshes() {
+        this.polygons.forEach(mesh => {
+            this.scene.remove(mesh);
+        });
+        this.polygons.clear();
+        this.lastHoveredMesh = null;
+        this.pendingMeshes = [];
     }
 
     ngOnInit(): void {
-        this.initScene();
+        this.setupResizeObserver();
         window.addEventListener('mousemove', this.onMouseMove);
         window.addEventListener('mousedown', this.onMouseDown);
         window.addEventListener('mouseup', this.onMouseUp);
         window.addEventListener('wheel', this.onWheel, { passive: false });
         window.addEventListener('click', this.onClick);
         this.animate();
+    }
+
+    ngAfterViewInit(): void {
+        this.ngZone.runOutsideAngular(() => {
+            setTimeout(() => {
+                this.initScene();
+            }, 0);
+        });
     }
 
     ngOnDestroy(): void {
@@ -139,11 +231,30 @@ export class PolygonSelectComponent {
         window.removeEventListener('wheel', this.onWheel);
         window.removeEventListener('click', this.onClick);
         cancelAnimationFrame(this.animationId);
-        this.renderer.dispose();
+        
+        // Hide tooltip
+        this.hideTooltip();
+        
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+        }
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
     }
 
     private initScene() {
         const container = this.containerRef.nativeElement;
+        if (container.clientWidth === 0 || container.clientHeight === 0) {
+            this.ngZone.runOutsideAngular(() => {
+                setTimeout(() => this.initScene(), 100);
+            });
+            return;
+        }
+        if (this.isRendererInitialized) {
+            return;
+        }
+
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(30, container.clientWidth / container.clientHeight, 0.1, 1500);
         this.camera.position.set(0, -5, this.cameraHeight);
@@ -157,10 +268,47 @@ export class PolygonSelectComponent {
         this.scene.add(light);
         this.scene.add(new THREE.AmbientLight(0xffffff, 0.4));
         this.scene.rotation.x = -0.5;
+        this.isRendererInitialized = true;
+        
+        // Add any pending meshes that were queued before scene initialization
+        if (this.pendingMeshes.length > 0) {
+            this.scene.add(...this.pendingMeshes);
+            this.pendingMeshes.forEach(mesh => {
+                this.polygons.set(mesh.key, mesh);
+            });
+            this.pendingMeshes = [];
+        }
+    }
+
+    private setupResizeObserver() {
+        if (typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver = new ResizeObserver((entries) => {
+                for (const entry of entries) {
+                    this.handleResize();
+                }
+            });
+            this.resizeObserver.observe(this.containerRef.nativeElement);
+        }
+    }
+
+    private handleResize() {
+        const container = this.containerRef.nativeElement;
+        if (this.renderer && this.camera && container.clientWidth > 0 && container.clientHeight > 0) {
+            this.camera.aspect = container.clientWidth / container.clientHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(container.clientWidth, container.clientHeight);
+        } else if (!this.isRendererInitialized && container.clientWidth > 0 && container.clientHeight > 0) {
+            this.initScene();
+        }
     }
 
     private onMouseMove = (event: MouseEvent) => {
         const container = this.containerRef.nativeElement;
+        
+        // Update current mouse position for tooltip
+        this.currentMouseX = event.clientX;
+        this.currentMouseY = event.clientY;
+        
         if (this.isMiddleMouseDown && this.lastMousePos) {
             const dx = event.clientX - this.lastMousePos.x;
             const dy = event.clientY - this.lastMousePos.y;
@@ -173,21 +321,27 @@ export class PolygonSelectComponent {
             const rect = container.getBoundingClientRect();
             const newMouseX = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
             const newMouseY = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+            
+            // Update tooltip position
+            this.updateTooltipPosition();
+            
             if (Math.abs(this.mouse.x - newMouseX) > 0.001 || Math.abs(this.mouse.y - newMouseY) > 0.001) {
                 this.mouse.x = newMouseX;
                 this.mouse.y = newMouseY;
                 this.needsRaycast = true;
             }
-
-            if (this.isLeftMouseDown) {
-                this.raycaster.setFromCamera(this.mouse, this.camera);
-                const intersects = this.raycaster.intersectObjects(this.polygons);
-                if (intersects.length > 0) {
-                    const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string };
-                    if (!polygon.locked && polygon.interactive) {
-                        polygon.locked = true;
-                        polygon.targetZ = this.LOCKED_HEIGHT;
-                        this.refreshPolyColor(polygon);
+            if (this.ALLOW_DRAG_SELECTION) {
+                if (this.isLeftMouseDown) {
+                    this.raycaster.setFromCamera(this.mouse, this.camera);
+                    const intersects = this.raycaster.intersectObjects(Array.from(this.polygons.values()));
+                    if (intersects.length > 0) {
+                        const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string };
+                        if (!polygon.locked && polygon.interactive) {
+                            polygon.locked = true;
+                            polygon.targetZ = this.LOCKED_HEIGHT;
+                            this.refreshPolyColor(polygon);
+                            this.selectionCallback(polygon.key, true);
+                        }
                     }
                 }
             }
@@ -249,17 +403,11 @@ export class PolygonSelectComponent {
             return;
         }
         this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.polygons);
+        const intersects = this.raycaster.intersectObjects(Array.from(this.polygons.values()));
         if (intersects.length > 0) {
             const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string };
             if (polygon.interactive) {
-                polygon.locked = !polygon.locked;
-                if (polygon.locked) {
-                    polygon.targetZ = this.lastHoveredMesh === polygon ? this.LOCKED_HOVER_HEIGHT : this.LOCKED_HEIGHT;
-                } else {
-                    polygon.targetZ = this.lastHoveredMesh === polygon ? this.LIFT_HEIGHT : 0;
-                }
-                this.refreshPolyColor(polygon);
+                this.setLockedState(polygon.key, !polygon.locked);
                 this.needsRaycast = true;
             }
         }
@@ -267,10 +415,10 @@ export class PolygonSelectComponent {
 
     private animate = () => {
         this.animationId = requestAnimationFrame(this.animate);
-        if (this.needsRaycast) {
+        if (this.needsRaycast && this.camera) {
             this.needsRaycast = false;
             this.raycaster.setFromCamera(this.mouse, this.camera);
-            const intersects = this.raycaster.intersectObjects(this.polygons);
+            const intersects = this.raycaster.intersectObjects(Array.from(this.polygons.values()));
             if (intersects.length > 0) {
                 const polygon = intersects[0].object as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string };
                 if (polygon.interactive) {
@@ -315,7 +463,11 @@ export class PolygonSelectComponent {
                 poly.position.z += (poly.targetZ - poly.position.z) * this.LIFT_SPEED;
             }
         });
-        this.renderer.render(this.scene, this.camera);
+        
+        // Only render if renderer is properly initialized
+        if (this.isRendererInitialized && this.renderer && this.scene && this.camera) {
+            this.renderer.render(this.scene, this.camera);
+        }
     };
 
     refreshButtonClicked() {
@@ -323,17 +475,75 @@ export class PolygonSelectComponent {
             poly.locked = false;
             poly.targetZ = 0;
             this.refreshPolyColor(poly);
+            this.selectionCallback(poly.key, false);
         });
     }
 
     setHovered(currentlyHovered: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string }) | null) {
         const localLastHoveredMesh = this.lastHoveredMesh;
         this.lastHoveredMesh = currentlyHovered;
+        
         if (localLastHoveredMesh != null) {
             this.refreshPolyColor(localLastHoveredMesh);
         }
         if (currentlyHovered != null) {
             this.refreshPolyColor(currentlyHovered);
+        }
+        
+        // Update tooltip
+        if (currentlyHovered && currentlyHovered.interactive) {
+            this.showTooltip(currentlyHovered.key);
+        } else {
+            this.hideTooltip();
+        }
+    }
+
+    private showTooltip(key: string) {
+        if (!this.tooltipEnabled) return;
+        
+        this.tooltipText = this.tooltipProvider(key);
+        this.tooltipVisible = true;
+        this.updateTooltipPosition();
+    }
+
+    private hideTooltip() {
+        this.tooltipVisible = false;
+    }
+
+    public toggleTooltips() {
+        this.tooltipEnabled = !this.tooltipEnabled;
+        
+        // Hide tooltip immediately if disabling
+        if (!this.tooltipEnabled) {
+            this.hideTooltip();
+        }
+    }
+
+    private updateTooltipPosition() {
+        if (this.tooltipVisible) {
+            const arrowSize = 4;
+            const arrowOffset = 10;
+            this.tooltipX = this.currentMouseX - arrowOffset;
+            this.tooltipY = this.currentMouseY + 10;
+            this.tooltipAbove = false;
+            const tooltipElement = document.querySelector('.mesh-tooltip') as HTMLElement;
+            if (tooltipElement) {
+                const rect = tooltipElement.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                if (this.tooltipX + rect.width > viewportWidth) {
+                    this.tooltipX = this.currentMouseX - rect.width + arrowOffset;
+                }
+                if (this.tooltipY + rect.height + arrowSize > viewportHeight) {
+                    this.tooltipY = this.currentMouseY - rect.height - arrowSize - 5;
+                    this.tooltipAbove = true;
+                }
+                this.tooltipX = Math.max(5, this.tooltipX);
+                this.tooltipY = Math.max(5, this.tooltipY);
+                const minTooltipX = this.currentMouseX - rect.width + 15;
+                const maxTooltipX = this.currentMouseX - 5;
+                this.tooltipX = Math.max(minTooltipX, Math.min(maxTooltipX, this.tooltipX));
+            }
         }
     }
 
@@ -347,25 +557,32 @@ export class PolygonSelectComponent {
         }
     }
 
-    private setLockedState(keys: string[], locked: boolean) {
-        this.polygons.forEach(poly => {
-            if (keys.includes(poly.key)) {
-                poly.locked = locked;
-                if (locked) {
-                    // If this polygon is currently hovered, set it to locked hover height
-                    if (this.lastHoveredMesh === poly) {
-                        poly.targetZ = this.LOCKED_HOVER_HEIGHT;
-                    } else {
-                        poly.targetZ = this.LOCKED_HEIGHT;
-                    }
-                } else {
-                    poly.targetZ = 0;
-                    if (this.lastHoveredMesh === poly) {
-                        this.lastHoveredMesh = null;
-                    }
-                }
-                this.refreshPolyColor(poly);
-            }
+    public setLockedStates(keys: string[], locked: boolean, triggerCallback: boolean = true) {
+        keys.forEach(key => {
+            this.setLockedState(key, locked, triggerCallback);
         });
+    }
+
+    public setLockedState(key: string, locked: boolean, triggerCallback: boolean = true) {
+        const poly = this.polygons.get(key);
+        if (poly) {
+            poly.locked = locked;
+            if (locked) {
+                if (this.lastHoveredMesh === poly) {
+                    poly.targetZ = this.LOCKED_HOVER_HEIGHT;
+                } else {
+                    poly.targetZ = this.LOCKED_HEIGHT;
+                }
+            } else {
+                poly.targetZ = 0;
+                if (this.lastHoveredMesh === poly) {
+                    this.lastHoveredMesh = null;
+                }
+            }
+            this.refreshPolyColor(poly);
+            if (triggerCallback) {
+                this.selectionCallback(poly.key, locked);
+            }
+        }
     }
 }

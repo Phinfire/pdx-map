@@ -5,8 +5,8 @@ import { AbstractLandedTitle } from "./AbstractLandedTitle";
 
 export class LandedTitle extends AbstractLandedTitle {
 
-    constructor(data: any, save: ICk3Save, ck3: CK3) {
-        super(data, save, ck3);
+    constructor(key: string, holder: string, deFactoLiege: string | null, save: ICk3Save, ck3: CK3) {
+        super(key, holder, deFactoLiege, save, ck3);
     }
 
     public override getTier(): RulerTier {

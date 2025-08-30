@@ -22,7 +22,9 @@ export class CK3 {
     constructor(localisation: Map<string, string>, traits: Trait[],
         county2Baronies: Map<string, string[]>,
         barony2provinceIndices: Map<string, number>,
-        titleKey2Color: Map<string, RGB>) {
+        titleKey2Color: Map<string, RGB>,
+        private vassalTitle2OverlordTitle: Map<string, string>
+    ) {
         this.localisation = localisation;
         this.traits = new Map<string, Trait>();
         traits.forEach(trait => {
@@ -32,11 +34,12 @@ export class CK3 {
         this.barony2provinceIndices = barony2provinceIndices;
         this.titleKey2Color = titleKey2Color;
     }
-    
+
     static recursivelyInsertBaronyIndices(parsed: any, previousKey: string,
         titleKey2Color: Map<string, RGB>,
         county2Baronies: Map<string, string[]>,
-        barony2provinceIndices: Map<string, number>
+        barony2provinceIndices: Map<string, number>,
+        vassalTitle2OverlordTitle: Map<string, string>
     ) {
         if (parsed.color) {
             if (parsed.color.hsv) {
@@ -58,7 +61,8 @@ export class CK3 {
                 county2Baronies.get(previousKey)!.push(baronyName);
                 barony2provinceIndices.set(baronyName, baronyData.province);
             } else {
-                this.recursivelyInsertBaronyIndices(parsed[key], key, titleKey2Color, county2Baronies, barony2provinceIndices);
+                vassalTitle2OverlordTitle.set(key, previousKey);
+                this.recursivelyInsertBaronyIndices(parsed[key], key, titleKey2Color, county2Baronies, barony2provinceIndices, vassalTitle2OverlordTitle);
             }
         }
     }
@@ -115,7 +119,8 @@ export class CK3 {
 
     public getVanillaTitleColor(titleKey: string) {
         if (!this.titleKey2Color.has(titleKey)) {
-            throw new Error("No color found for title " + titleKey);
+            return new RGB(0, 0, 0);
+            //throw new Error("No color found for title " + titleKey);
         }
         return this.titleKey2Color.get(titleKey);
     }
@@ -126,5 +131,12 @@ export class CK3 {
 
     getBuildingData(key: string) {
         return new Building(key, this.buildingKey2Data.get(key), this);
+    }
+
+    getDeJureLiegeTitle(titleKey: string) {
+        if (this.vassalTitle2OverlordTitle.has(titleKey)) {
+            return this.vassalTitle2OverlordTitle.get(titleKey);
+        }
+        return null;
     }
 }

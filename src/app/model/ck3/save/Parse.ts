@@ -6,6 +6,11 @@ import { DynastyHouse } from "../DynastyHouse";
 import { Holding } from "../Holding";
 import { AbstractLandedTitle } from "../title/AbstractLandedTitle";
 import { CK3 } from "../CK3";
+import { ICk3Save } from "./ICk3Save";
+import { LandedTitle } from "../title/LandedTitle";
+import { CustomLandedTitle } from "../title/CustomLandedTitle";
+import { RGB } from "../../../util/RGB";
+import { RulerTier } from "../RulerTier";
 
 function readPlayers(data: any, characterCreator: (id: string, data: any) => Character | null): Ck3Player[] {
     const players = [];
@@ -113,6 +118,16 @@ export function readVassal2Liege(data: any) {
 }
 
 export function readLandedTitles(data: any, titleCreator: (titleData: any) => AbstractLandedTitle) {
+    const landedTitles: AbstractLandedTitle[] = [];
+    if (data.landed_titles?.landed_titles) {
+        for (let i of Object.keys(data.landed_titles.landed_titles)) {
+            if (data.landed_titles.landed_titles[i].key) {
+                landedTitles.push(titleCreator(data.landed_titles.landed_titles[i]));
+            }
+        }
+    }
+    return landedTitles;
+    /*
     const cachedCountyKey2LandedTitle = new Map<string, AbstractLandedTitle>();
     if (data.landed_titles?.landed_titles) {
         for (let i of Object.keys(data.landed_titles.landed_titles)) {
@@ -123,4 +138,20 @@ export function readLandedTitles(data: any, titleCreator: (titleData: any) => Ab
         }
     }
     return cachedCountyKey2LandedTitle;
+    */
+}
+
+export function createTitle(data: any, save: ICk3Save, ck3: CK3): AbstractLandedTitle {
+    const key = data.key;
+    const holder = data.holder;
+    const de_facto_liege = data.de_facto_liege;
+    if (key.startsWith("x_")) {
+        const rgb = new RGB(data.color.rgb[0], data.color.rgb[1], data.color.rgb[2]);
+        const tierString = data.tier ? RulerTier.fromRealmTier(data.tier) : RulerTier.NONE;
+        const vassalTitleIndices = data.de_jure_vassals || [];
+        const name = data.name;
+        return new CustomLandedTitle(key, holder, de_facto_liege, rgb, tierString, vassalTitleIndices, name, save, ck3);
+    } else {
+        return new LandedTitle(key, holder, de_facto_liege, save, ck3);
+    }
 }

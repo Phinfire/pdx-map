@@ -6,6 +6,9 @@ export class RGB {
         }
     }
 
+    toNumber(): number {
+        return (this.r << 16) | (this.g << 8) | this.b;
+    }
 
     public static fromHSV(h: number, s: number, v: number): RGB {
         const c = v * s;

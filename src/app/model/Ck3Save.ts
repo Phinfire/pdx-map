@@ -5,15 +5,23 @@ import { Faith } from "./ck3/Faith";
 import { Holding } from "./ck3/Holding";
 import { Ck3Player } from "./ck3/Player";
 import { ICk3Save } from "./ck3/save/ICk3Save";
-import { readAllFaiths, readAllCultures } from "./ck3/save/Parse";
+import { readAllFaiths, readAllCultures, readLandedTitles, createTitle } from "./ck3/save/Parse";
 import { AbstractLandedTitle } from "./ck3/title/AbstractLandedTitle";
-import { SimplifiedDate } from "./common/SimplifiedDate";
 
 export class Ck3Save implements ICk3Save {
+
+    // character data to avoid object instantiation at init
+    private livingCharacters: any;
+    private deadUnprunableCharacters: any;
 
     private players: Ck3Player[] = [];
     private faiths: Faith[] = [];
     private cultures: Culture[] = [];
+    private landedTitles: AbstractLandedTitle[] = [];
+
+    private titleKey2Index = new Map<string, number>();
+
+    private cachedCharacters = new Map<string, Character>();
 
     static fromRawData(data: any, ck3: CK3): Ck3Save {
         const save = new Ck3Save(ck3);
@@ -22,15 +30,18 @@ export class Ck3Save implements ICk3Save {
     }
 
     private constructor(private ck3: CK3) {
-        
+
     }
 
     private initialize(data: any) {
-        this.players = Ck3Save.readPlayers(data, (id, data) => this.makeCharacter(data, id));
+        this.players = Ck3Save.readPlayers(data, (id, data) => this.findDataAndCreateCharacter(data, id));
         this.faiths = readAllFaiths(data);
         this.cultures = readAllCultures(data);
-        console.log("Ck3Save initialized with players:", this.players.length, "faiths:", this.faiths.length, "cultures:", this.cultures.length);
-        
+        this.landedTitles = readLandedTitles(data, (titleData) => createTitle(titleData, this, this.ck3));
+        this.landedTitles.forEach((title, index) => {
+            this.titleKey2Index.set(title.getKey(), index);
+        });
+        //console.log("Ck3Save initialized with players:", this.players.length, "faiths:", this.faiths.length, "cultures:", this.cultures.length, "titles:", this.titles.size);
     }
 
     private static readPlayers(data: any, characterCreator: (id: string, data: any) => Character | null) {
@@ -83,7 +94,11 @@ export class Ck3Save implements ICk3Save {
         return players;
     }
 
-    makeCharacter(data: any, characterId: string): Character | null {
+    public getCK3(): CK3 {
+        return this.ck3;
+    }
+
+    findDataAndCreateCharacter(data: any, characterId: string): Character | null {
         let charData = null;
         if (data.living && data.living[characterId]) {
             charData = data.living[characterId];
@@ -95,11 +110,19 @@ export class Ck3Save implements ICk3Save {
             console.warn(`Character with ID ${characterId} not found in living or dead data.`);
             return null;
         }
-        return Character.fromRawData(characterId, charData, this, this.ck3);
+        const char = Character.fromRawData(characterId, charData, this, this.ck3);
+        this.cachedCharacters.set(characterId, char);
+        return char;
     }
 
     getCharacter(characterId: number) {
-        throw new Error("Method not implemented.");
+        if (this.cachedCharacters.has("" + characterId)) {
+            return this.cachedCharacters.get("" + characterId);
+        }
+        return this.findDataAndCreateCharacter({
+            living: this.livingCharacters,
+            dead_unprunable: this.deadUnprunableCharacters,
+        }, "" + characterId,);
     }
 
     public getDynastyHouseAndDynastyData(houseId: number) {
@@ -111,12 +134,19 @@ export class Ck3Save implements ICk3Save {
         **/
     }
 
+    getLandedTitles() {
+        return this.landedTitles;
+    }
+
     getCurrentDate(): Date {
         throw new Error("Method not implemented.");
     }
 
     getTitleByIndex(index: number): AbstractLandedTitle {
-        throw new Error("Method not implemented.");
+        if (index < 0 || index >= this.landedTitles.length) {
+            throw new Error("Invalid title index: " + index + ". Expected [0, " + (this.landedTitles.length - 1) + "]");
+        }
+        return this.landedTitles[index];
     }
 
     getHeldTitles(character: Character): AbstractLandedTitle[] {
@@ -148,7 +178,11 @@ export class Ck3Save implements ICk3Save {
     }
 
     getTitle(key: string): AbstractLandedTitle {
-        throw new Error("Method not implemented.");
+        const index = this.titleKey2Index.get(key);
+        if (index !== undefined) {
+            return this.landedTitles[index];
+        }
+        throw new Error(`Title with key ${key} not found.`);
     }
 
 }

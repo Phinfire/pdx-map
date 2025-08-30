@@ -116,7 +116,7 @@ export class LegacyCk3Save {
 
             for (let i of Object.keys(this.data.landed_titles.landed_titles)) {
                 if (this.data.landed_titles.landed_titles[i].key && this.data.landed_titles.landed_titles[i].key.startsWith("c_")) {
-                    this.cachedCountyKey2LandedTitle.set(this.data.landed_titles.landed_titles[i].key, AbstractLandedTitle.fromRawData(this.data.landed_titles.landed_titles[i], this, this.ck3));
+                    this.cachedCountyKey2LandedTitle.set(this.data.landed_titles.landed_titles[i].key, TitleFactory.createTitle(this.data.landed_titles.landed_titles[i], this, this.ck3));
                 }
             }
         }
@@ -211,7 +211,7 @@ export class LegacyCk3Save {
         for (let key of Object.keys(this.data.landed_titles.landed_titles)) {
             if (this.data.landed_titles.landed_titles[key].holder && this.data.landed_titles.landed_titles[key].holder == character.getCharacterId()) {
                 const titleData = this.data.landed_titles.landed_titles[key];
-                titleDatas.push(AbstractLandedTitle.fromRawData(titleData, this, this.ck3)); 
+                titleDatas.push(TitleFactory.createTitle(titleData, this, this.ck3)); 
             }
         }
         return titleDatas;
@@ -223,7 +223,7 @@ export class LegacyCk3Save {
         }
         for (let i of Object.keys(this.data.landed_titles.landed_titles)) {
             if (this.data.landed_titles.landed_titles[i].key == key) {
-                return AbstractLandedTitle.fromRawData(this.data.landed_titles.landed_titles[i], this, this.ck3);
+                return TitleFactory.createTitle(this.data.landed_titles.landed_titles[i], this, this.ck3);
             }
         }
         throw new Error("Title not found: " + key);
@@ -233,7 +233,7 @@ export class LegacyCk3Save {
         if (this.cachedLandedTitles.size == 0) {
             for (let i of Object.keys(this.data.landed_titles.landed_titles)) {
                 const titleData = this.data.landed_titles.landed_titles[i];
-                this.cachedLandedTitles.set(titleData.key, AbstractLandedTitle.fromRawData(titleData, this, this.ck3));
+                this.cachedLandedTitles.set(titleData.key, TitleFactory.createTitle(titleData, this, this.ck3));
             }
         }
         return Array.from(this.cachedLandedTitles.values());
@@ -294,7 +294,7 @@ export class LegacyCk3Save {
     }
 
     public getTitleByIndex(index: number) {
-        return AbstractLandedTitle.fromRawData(this.data.landed_titles.landed_titles[index], this, this.ck3);
+        return TitleFactory.createTitle(this.data.landed_titles.landed_titles[index], this, this.ck3);
     }
 
     public getPlayerNameByCharId(charId: number) {

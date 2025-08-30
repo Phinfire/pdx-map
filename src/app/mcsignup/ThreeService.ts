@@ -8,11 +8,14 @@ import { RendererConfigProvider } from '../polygon-select/RendererConfigProvider
 })
 export class ThreeService {
 
-    public static addGeoJsonPolygons(geojson: any, mapScale: number, configProvider: RendererConfigProvider, thickness: number, addFunc: (mesh: any) => void) {
-        if (!geojson || !geojson.features) return;
+    public static makeGeoJsonPolygons(geojson: any, configProvider: RendererConfigProvider) {
+        const meshes: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string })[] = [];
+        const thickness = 1.5;
+        const mapScale = 400.0;
+        if (!geojson || !geojson.features) return meshes;
         const allCoords = ThreeService.loadCoordinates(geojson);
         const boundingBox = ThreeService.calculateBoundingBox(allCoords);
-        const filteredFeatures = geojson.features.filter((feature: any) => 
+        const filteredFeatures = geojson.features.filter((feature: any) =>
             !ThreeService.hasEdgeOnBoundingBox(feature, boundingBox)
         );
         const centerFn = ThreeService.defineTransform(allCoords, mapScale);
@@ -23,40 +26,60 @@ export class ThreeService {
             const coords = feature.geometry.coordinates;
             const interactive = feature.properties.type != "wasteland";
             const key = feature.properties.key ? feature.properties.key : "";
+            const featureName = feature.properties.name || key || 'unnamed';
+            
             if (!key2Geos.has(key)) {
                 key2Geos.set(key, []);
                 key2isInteractive.set(key, interactive);
             }
             try {
                 if (type === 'Polygon') {
-                    key2Geos.get(key)!.push(ThreeService.createGeometryFromCoords(coords, centerFn, thickness));
+                    const geometry = ThreeService.createGeometryFromCoords(coords, centerFn, thickness);
+                    if (geometry) {
+                        key2Geos.get(key)!.push(geometry);
+                    }
                 } else if (type === 'MultiPolygon') {
-                    coords.forEach((polyCoords: any) => {
-                        key2Geos.get(key)!.push(ThreeService.createGeometryFromCoords(polyCoords, centerFn, thickness));
+                    coords.forEach((polyCoords: any, polyIndex: number) => {
+                        try {
+                            const geometry = ThreeService.createGeometryFromCoords(polyCoords, centerFn, thickness);
+                            if (geometry) {
+                                key2Geos.get(key)!.push(geometry);
+                            }
+                        } catch (err) {
+                            console.warn(`Skipping invalid polygon ${polyIndex} in MultiPolygon feature ${featureName}:`, err);
+                        }
                     });
                 } else {
                     console.error(`Unsupported geometry type: ${type}`);
                 }
             } catch (err) {
-                console.error(`Error processing feature ${key}:`, err);
+                console.warn(`Skipping invalid feature ${featureName}:`, err);
             }
         });
         const nonInteractiveGeos = [];
         for (const [key, geos] of key2Geos) {
+            if (geos.length === 0) {
+                console.warn(`No valid geometries found for key: ${key}`);
+                continue;
+            }
+            
             const mergedGeo = mergeGeometries(geos);
             const interactive = key2isInteractive.get(key)!;
             const color = configProvider.getColor(key, interactive, false, false);
             if (interactive) {
                 const mesh = ThreeService.meshFromGeometry(mergedGeo, color, interactive, key);
-                addFunc(mesh);
+                meshes.push(mesh);
             } else {
                 nonInteractiveGeos.push(mergedGeo);
             }
         }
-        const inactiveColor = configProvider.getColor("", false, false, false);
-        const nonInteractiveMesh = ThreeService.meshFromGeometry(mergeGeometries(nonInteractiveGeos), inactiveColor, false, "");
-        addFunc(nonInteractiveMesh);
-
+        
+        if (nonInteractiveGeos.length > 0) {
+            const inactiveColor = configProvider.getColor("", false, false, false);
+            const nonInteractiveMesh = ThreeService.meshFromGeometry(mergeGeometries(nonInteractiveGeos), inactiveColor, false, "");
+            meshes.push(nonInteractiveMesh);
+        }
+        return meshes;
         //const border = ThreeService.addAABBBorder(allCoords, centerFn, borderColor);
         //if (border) addFunc(border);
     }
@@ -68,7 +91,7 @@ export class ThreeService {
         mesh.locked = false;
         mesh.interactive = interactive;
         mesh.key = key;
-        return mesh;
+        return mesh as (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string });
     }
 
     public static addAABBBorder(allCoords: [number, number][], normFn: (x: number, y: number) => [number, number], color: number) {
@@ -155,27 +178,89 @@ export class ThreeService {
         };
     }
 
-    public static createGeometryFromCoords(coords: any, normFn: (x: number, y: number) => [number, number], thickness: number) {
+    public static createGeometryFromCoords(coords: any, normFn: (x: number, y: number) => [number, number], thickness: number): THREE.BufferGeometry | null {
         if (!coords || !coords.length) {
-            throw new Error('Invalid coordinates provided for geometry creation: ' + JSON.stringify(coords));
+            console.warn('Invalid coordinates provided for geometry creation:', coords);
+            return null;
         }
+
+        // Add validation for the outer ring
+        if (!coords[0] || !Array.isArray(coords[0]) || coords[0].length < 3) {
+            console.warn('Invalid outer ring coordinates: must have at least 3 points. Got:', coords[0]);
+            return null;
+        }
+
         const shape = new THREE.Shape();
-        coords[0].forEach(([x, y]: [number, number], i: number) => {
+
+        // Validate each coordinate point before processing
+        const outerRing = coords[0];
+        let validPointsAdded = 0;
+
+        outerRing.forEach(([x, y]: [number, number], i: number) => {
+            if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) {
+                console.warn(`Invalid coordinate at index ${i}:`, [x, y]);
+                return; // Skip invalid points
+            }
+
             const [nx, ny] = normFn(x, y);
-            if (i === 0) shape.moveTo(nx, ny);
-            else shape.lineTo(nx, ny);
+            if (isNaN(nx) || isNaN(ny)) {
+                console.warn(`Transform resulted in NaN at index ${i}:`, [x, y], '->', [nx, ny]);
+                return; // Skip points that transform to NaN
+            }
+
+            if (validPointsAdded === 0) {
+                shape.moveTo(nx, ny);
+            } else {
+                shape.lineTo(nx, ny);
+            }
+            validPointsAdded++;
         });
-        shape.closePath();
-        for (let i = 1; i < coords.length; i++) {
-            const holePath = new THREE.Path();
-            coords[i].forEach(([x, y]: [number, number], j: number) => {
-                const [nx, ny] = normFn ? normFn(x, y) : [x, y];
-                if (j === 0) holePath.moveTo(nx, ny);
-                else holePath.lineTo(nx, ny);
-            });
-            holePath.closePath();
-            shape.holes.push(holePath);
+
+        if (validPointsAdded < 3) {
+            console.warn(`Insufficient valid points for geometry creation. Need at least 3, got ${validPointsAdded}`);
+            return null;
         }
+
+        shape.closePath();
+
+        // Process holes with similar validation
+        for (let i = 1; i < coords.length; i++) {
+            if (!coords[i] || !Array.isArray(coords[i]) || coords[i].length < 3) {
+                console.warn(`Skipping invalid hole at index ${i}:`, coords[i]);
+                continue;
+            }
+
+            const holePath = new THREE.Path();
+            let holeValidPoints = 0;
+
+            coords[i].forEach(([x, y]: [number, number], j: number) => {
+                if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) {
+                    console.warn(`Invalid hole coordinate at ${i},${j}:`, [x, y]);
+                    return;
+                }
+
+                const [nx, ny] = normFn ? normFn(x, y) : [x, y];
+                if (isNaN(nx) || isNaN(ny)) {
+                    console.warn(`Hole transform resulted in NaN at ${i},${j}:`, [x, y], '->', [nx, ny]);
+                    return;
+                }
+
+                if (holeValidPoints === 0) {
+                    holePath.moveTo(nx, ny);
+                } else {
+                    holePath.lineTo(nx, ny);
+                }
+                holeValidPoints++;
+            });
+
+            if (holeValidPoints >= 3) {
+                holePath.closePath();
+                shape.holes.push(holePath);
+            } else {
+                console.warn(`Skipping hole with insufficient valid points: ${holeValidPoints}`);
+            }
+        }
+
         const extrudeGeometry = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
         return ThreeService.removeBottomFaces(extrudeGeometry);
     }
@@ -184,7 +269,7 @@ export class ThreeService {
         const positionAttribute = geometry.attributes['position'] as THREE.BufferAttribute;
         const positions = positionAttribute.array;
         const indices = geometry.index?.array;
-        
+
         if (indices) {
             const newIndices: number[] = [];
             let removedTriangles = 0;
@@ -194,9 +279,9 @@ export class ThreeService {
                 if (z < minZ) minZ = z;
                 if (z > maxZ) maxZ = z;
             }
-            
+
             const threshold = minZ + (maxZ - minZ) * 0.1;
-            
+
             for (let i = 0; i < indices.length; i += 3) {
                 const i1 = indices[i] * 3;
                 const i2 = indices[i + 1] * 3;
@@ -204,7 +289,7 @@ export class ThreeService {
                 const z1 = positions[i1 + 2];
                 const z2 = positions[i2 + 2];
                 const z3 = positions[i3 + 2];
-                
+
                 if (z1 > threshold || z2 > threshold || z3 > threshold) {
                     newIndices.push(indices[i], indices[i + 1], indices[i + 2]);
                 } else {
@@ -237,17 +322,17 @@ export class ThreeService {
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(newPositions, 3));
             const normalAttribute = geometry.attributes['normal'] as THREE.BufferAttribute;
             const uvAttribute = geometry.attributes['uv'] as THREE.BufferAttribute;
-            
+
             if (normalAttribute) {
                 const normals = normalAttribute.array;
                 const newNormals: number[] = [];
                 let triangleIndex = 0;
-                
+
                 for (let i = 0; i < positions.length; i += 9) {
                     const z1 = positions[i + 2];
                     const z2 = positions[i + 5];
                     const z3 = positions[i + 8];
-                    
+
                     if (z1 > threshold || z2 > threshold || z3 > threshold) {
                         const normalStart = triangleIndex * 9;
                         for (let j = 0; j < 9; j++) {
@@ -258,17 +343,17 @@ export class ThreeService {
                 }
                 geometry.setAttribute('normal', new THREE.Float32BufferAttribute(newNormals, 3));
             }
-            
+
             if (uvAttribute) {
                 const uvs = uvAttribute.array;
                 const newUVs: number[] = [];
                 let triangleIndex = 0;
-                
+
                 for (let i = 0; i < positions.length; i += 9) {
                     const z1 = positions[i + 2];
                     const z2 = positions[i + 5];
                     const z3 = positions[i + 8];
-                    
+
                     if (z1 > threshold || z2 > threshold || z3 > threshold) {
                         const uvStart = triangleIndex * 6; // 3 vertices × 2 UV components
                         for (let j = 0; j < 6; j++) {
@@ -280,7 +365,7 @@ export class ThreeService {
                 geometry.setAttribute('uv', new THREE.Float32BufferAttribute(newUVs, 2));
             }
         }
-        
+
         return geometry;
     }
 
@@ -288,7 +373,7 @@ export class ThreeService {
         if (allCoords.length === 0) {
             return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
         }
-        
+
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         for (const [x, y] of allCoords) {
             if (x < minX) minX = x;
@@ -296,7 +381,7 @@ export class ThreeService {
             if (y < minY) minY = y;
             if (y > maxY) maxY = y;
         }
-        
+
         return { minX, maxX, minY, maxY };
     }
 

@@ -58,6 +58,7 @@ export class PdxFileService {
                 const handleFileRead = async (content: string) => {
                     try {
                         const parser = await Jomini.initialize();
+                        console.log("Jomini initialized for file:", file.name);
                         const parsedData = parser.parseText(content, {}, (q) => q.json());
                         const json = JSON.parse(parsedData);
                         resolve({ name: file.name, json });
@@ -73,7 +74,7 @@ export class PdxFileService {
                 } else if (['.zip', '.eu4', '.ck3'].some(ext => file.name.endsWith(ext))) {
                     this.import(file, json => {
                         if (file.name.endsWith('.ck3')) {
-                            this.downloadJson(json, file.name.split(".")[0] + ".json");
+                            //this.downloadJson(json, file.name.split(".")[0] + ".json");
                         }
                         resolve({ name: file.name, json });
                     });
@@ -101,7 +102,6 @@ export class PdxFileService {
             const decodedData = decoder.decode(gamestateData);
             return this.importGamestate(decodedData);
         }).then((json: any) => {
-            console.log("Importing file done");
             callback(json);
         });
     }
@@ -110,7 +110,6 @@ export class PdxFileService {
         const fixedData = gamestateData + "}"
         return Jomini.initialize().then((parser) => {
             const out = parser.parseText(gamestateData, {}, (q) => q.json());
-            console.log("Parsing gamestate file done");
             const j = JSON.parse(out);
             return j;
         });

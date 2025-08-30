@@ -6,6 +6,8 @@ import { catchError, map, switchMap, shareReplay } from 'rxjs/operators';
 import { CK3 } from '../../model/ck3/CK3';
 import { Trait } from '../../model/ck3/Trait';
 import { RGB } from '../../util/RGB';
+import { PdxFileService } from '../pdx-file.service';
+import { Ck3Save } from '../../model/Ck3Save';
 
 @Injectable({
     providedIn: 'root'
@@ -14,6 +16,10 @@ export class CK3Service {
     private readonly jomini$ = from(Jomini.initialize()).pipe(shareReplay(1));
 
     private ck3$: Observable<CK3> | null = null;
+
+    constructor(private paradoxFileService: PdxFileService) {
+
+    }
 
     private fetchText(url: string): Observable<string> {
         return from(fetch(url).then(res => res.text()));
@@ -52,12 +58,14 @@ export class CK3Service {
     private parseLandedTitles(data: string, parser: any): {
         titleKey2Color: Map<string, RGB>,
         county2Baronies: Map<string, string[]>,
-        barony2provinceIndices: Map<string, number>
+        barony2provinceIndices: Map<string, number>,
+        vassalTitle2OverlordTitle: Map<string, string>
     } {
         const parsed = parser.parseText(data);
         const titleKey2Color = new Map<string, RGB>();
         const county2Baronies = new Map<string, string[]>();
         const barony2provinceIndices = new Map<string, number>();
+        const vassalTitle2OverlordTitle = new Map<string, string>();
 
         for (const key of Object.keys(parsed)) {
             CK3.recursivelyInsertBaronyIndices(
@@ -65,11 +73,12 @@ export class CK3Service {
                 key,
                 titleKey2Color,
                 county2Baronies,
-                barony2provinceIndices
+                barony2provinceIndices,
+                vassalTitle2OverlordTitle
             );
         }
 
-        return { titleKey2Color, county2Baronies, barony2provinceIndices };
+        return { titleKey2Color, county2Baronies, barony2provinceIndices, vassalTitle2OverlordTitle };
     }
 
     private parseBuildings(zipBlob: Blob, parser: any): Observable<Map<string, any>> {
@@ -133,7 +142,8 @@ export class CK3Service {
                         traits,
                         landedTitles.county2Baronies,
                         landedTitles.barony2provinceIndices,
-                        landedTitles.titleKey2Color
+                        landedTitles.titleKey2Color,
+                        landedTitles.vassalTitle2OverlordTitle
                     );
                 }),
                 shareReplay(1)
@@ -141,5 +151,53 @@ export class CK3Service {
         }
 
         return this.ck3$;
+    }
+
+    openCk3SaveFromFile(fileURL: string): Observable<Ck3Save> {
+        return this.initializeCK3().pipe(
+            switchMap(ck3 => 
+                from(fetch(fileURL)).pipe(
+                    switchMap(response => from(response.blob())),
+                    map(blob => new File([blob], "save.ck3")),
+                    switchMap(file => from(this.paradoxFileService.importFilePromise(file))),
+                    map(result => {
+                        return Ck3Save.fromRawData(result.json, ck3);
+                    })
+                )
+            ),
+            catchError(error => {
+                console.error("Failed to import CK3 save:", error);
+                throw error;
+            })
+        );
+    }
+
+    downloadJsonFromFileUrl(fileURL: string, filename: string = 'data.json'): Observable<void> {
+        return from(fetch(fileURL)).pipe(
+            switchMap(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return from(response.blob());
+            }),
+            switchMap(blob => from(this.paradoxFileService.importFilePromise(new File([blob], 'temp')))),
+            map(result => {
+                const jsonBlob = new Blob([JSON.stringify(result.json, null, 2)], {
+                    type: 'application/json'
+                });
+                const url = URL.createObjectURL(jsonBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename.endsWith('.json') ? filename : `${filename}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }),
+            catchError(error => {
+                console.error('Failed to download JSON from file URL:', error);
+                throw error;
+            })
+        );
     }
 }

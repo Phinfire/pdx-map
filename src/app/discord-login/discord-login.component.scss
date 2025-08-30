@@ -1,33 +1,21 @@
 @use '@angular/material' as mat;
+
+:host {
+    @include mat.button-overrides((filled-container-color: rgb(88, 101, 242),
+        ));
+}
+
 .discord {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 1em 2em;
-}
-
-.login-button {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-    width: 15em;
-    height: 3em;
-}
-
-.login-button:hover {
-    background-color: var(--lighter-background-color);
-}
-
-.login-button:active {
-    background-color: var(--background-color);
 }
 
 .avatar-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding-right: 1em;
+    padding: 0.5em;
 }
 
 .avatar-img {
@@ -43,11 +31,22 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding-left: 0.5em;
     font-size: 1.5em;
 }
 
 .profile-name {
     text-align: center;
     width: 100%;
+}
+
+.login-button {
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    gap: 1.25em;
+    
+    mat-icon {
+        font-size: 1.5em;
+        width: 1.5em;
+        height: 1.5em;
+    }
 }

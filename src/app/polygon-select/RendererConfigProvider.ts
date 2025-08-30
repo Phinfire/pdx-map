@@ -20,9 +20,9 @@ export class RendererConfigProvider {
                 }
             } else {
                 if (hover) {
-                    return this.GEOMETRY_HOVER_COLOR;
+                    return this.alphaBlend(this.getPrimaryColor(key), this.GEOMETRY_HOVER_COLOR, 0.5);
                 } else {
-                    return this.key2color.get(key) || this.GEOMETRY_DEFAULT_COLOR;
+                    return this.getPrimaryColor(key);
                 }
             }
         } else {
@@ -30,8 +30,16 @@ export class RendererConfigProvider {
         }
     }
 
+    private getPrimaryColor(key: string) {
+        if (this.key2color.has(key)) {
+            return this.key2color.get(key)!;
+        }
+        return this.GEOMETRY_DEFAULT_COLOR;
+    }
+
     getClearColor() {
-        return 0x141419;
+        return 0x000000;
+        //return 0x141419;
     }
 
     alphaBlend(color1: number, color2: number, alpha: number): number {

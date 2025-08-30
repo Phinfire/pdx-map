@@ -1,9 +1,17 @@
 <div class="main">
     <div class="render-wrapper">
-        <app-polygon-select [rendererConfigProvider]="configProvider">
-        </app-polygon-select>
+        @if (isDataReady()) {
+            <app-polygon-select [rendererConfigProvider]="configProvider" [selectionCallback]="selectionCallback"></app-polygon-select>
+        }
+        @if (!isDataReady()) {
+            <mat-spinner></mat-spinner>
+            <span class="loading-text">Loading...</span>
+        }
     </div>
     <div class="table-container">
+        <div class="discord-container">
+            <app-discord-field></app-discord-field>
+        </div>
         <h2>Your Picks:</h2>
         <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" cdkDropList
             (cdkDropListDropped)="drop($event)">
@@ -13,14 +21,18 @@
             </ng-container>
             <ng-container matColumnDef="value">
                 <th mat-header-cell *matHeaderCellDef>Item</th>
-                <td mat-cell *matCellDef="let element">{{element.value}}</td>
+                <td mat-cell *matCellDef="let element">{{element.name}}</td>
             </ng-container>
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;" cdkDrag [cdkDragData]="row"
                 class="draggable-row"></tr>
         </table>
-        <app-discord-login>
-            
-        </app-discord-login>
+        <button mat-flat-button color="primary" (click)="register()" [disabled]="!canRegister()" class="register-button">Register</button>
+        <div class="spacer"></div>
+        <div class="discord-container">
+            @if (!discordAuthService.isLoggedIn()) {
+                <app-discord-login></app-discord-login>
+            }
+        </div>
     </div>
 </div>

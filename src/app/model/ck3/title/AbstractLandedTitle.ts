@@ -1,28 +1,16 @@
 import { RGB } from "../../../util/RGB";
 import { CK3 } from "../CK3";
-import { LegacyCk3Save } from "../LegacyCk3Save";
 import { RulerTier } from "../RulerTier";
 import { ICk3Save } from "../save/ICk3Save";
-import { CustomLandedTitle } from "./CustomLandedTitle";
-import { LandedTitle } from "./LandedTitle";
 
 export abstract class AbstractLandedTitle {
 
-    static fromRawData(data: any, save: ICk3Save, ck3: CK3): AbstractLandedTitle {
-        const key = data.key;
-        if (key.startsWith("x_")) {
-            console.warn("Custom title detected: " + key);
-            return new CustomLandedTitle(data, save, ck3);
-        } else {
-            console.warn("Standard title detected: " + key);
-            return new LandedTitle(data, save, ck3);
-        }
-    }
+    private holderIndex: number;
+    private deFactoLiegeIndex: number | null;
 
-    protected constructor(private data: any, protected save: ICk3Save, protected ck3: CK3) {
-        if (!data) {
-            throw new Error("No data for landed title");
-        }
+    protected constructor(private key: string, holder: string, deFactoLiege: string | null, protected save: ICk3Save, protected ck3: CK3) {
+        this.holderIndex = parseInt(holder);
+        this.deFactoLiegeIndex = deFactoLiege ? parseInt(deFactoLiege) : null;
     }
 
     public abstract getColor(): RGB;
@@ -32,16 +20,16 @@ export abstract class AbstractLandedTitle {
     public abstract getTier(): RulerTier;
 
     public getKey() {
-        return this.data.key;
+        return this.key;
     }
 
     public getHolder() {
-        return this.save.getCharacter(this.data.holder)!;
+        return this.save.getCharacter(this.holderIndex)!;
     }
 
     public getDeFactoLiegeTitle() {
-        if (this.data.de_facto_liege) {
-            return this.save.getTitleByIndex(this.data.de_facto_liege);
+        if (this.deFactoLiegeIndex) {
+            return this.save.getTitleByIndex(this.deFactoLiegeIndex);
         }
         return null;
     }

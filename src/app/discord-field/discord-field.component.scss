@@ -1,0 +1,49 @@
+@use '@angular/material' as mat;
+
+:host {
+    @include mat.button-overrides((filled-container-color: rgb(88, 101, 242),
+        ));
+}
+
+.discord {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.avatar-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5em;
+}
+
+.avatar-img {
+    clip-path: circle(48% at 50% 50%);
+    object-fit: cover;
+    width: 64px;
+    height: 64px;
+    background-color: black;
+}
+
+.name-container {
+    width: 75%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+}
+
+.profile-name {
+    text-align: center;
+    width: 100%;
+}
+
+.name-container.logged-out {
+  opacity: 0.3;
+}
+
+.logout-button {
+    opacity: 0.5;
+}

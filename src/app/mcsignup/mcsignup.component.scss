@@ -1,4 +1,5 @@
 @use '@angular/material' as mat;
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
 
 :host {
     background-color: var(--void-color);
@@ -11,20 +12,19 @@
     justify-content: center;
     overflow-y: auto;
     max-height: 100%;
-    @include mat.table-overrides((
-        row-item-label-text-size: 1.4em,
-        header-container-height: 0em,
-        header-headline-size: 0em,
-        row-item-outline-color: var(--background-color),
-        row-item-label-text-color: var(--text-color),
-        row-item-outline-width: 1px,
-        header-headline-color: none,
-        header-headline-font: var(--font-family) var(--font-weight-bold),
-        row-item-label-text-font: var(--font-family) var(--font-weight-regular)
-    ));
+    --gap: 2em;
+    @include mat.table-overrides((row-item-label-text-size: 1.4em,
+            header-container-height: 0em,
+            header-headline-size: 0em,
+            row-item-outline-color: var(--background-color),
+            row-item-label-text-color: var(--text-color),
+            row-item-outline-width: 1px,
+            header-headline-color: none,
+            header-headline-font: var(--font-family) var(--font-weight-bold),
+            row-item-label-text-font: var(--font-family) var(--font-weight-regular)));
+    @include mat.button-overrides((filled-container-color: rgb(0, 180, 0),
+        ));
 }
-
-
 
 .main {
     display: flex;
@@ -33,7 +33,7 @@
     width: 95%;
     height: 95%;
     background-color: var(--background-color);
-    padding: 0.5em;
+    padding: var(--gap);
 }
 
 .render-wrapper {
@@ -41,46 +41,73 @@
     flex-direction: column;
     width: 80%;
     height: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+
+    .loading-text {
+        padding: 1.5em;
+        font-size: 1.5em;
+        font-family: var(--hacker-font);
+        text-align: center;
+        
+    }
+
+    .loading-text::before {
+        content: "...";
+        visibility: hidden;
+    }
 }
 
 .table-container {
     width: 20%;
+    height: 100%;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 0em 1em;
+    box-shadow: inset 0 0 10px 2px rgba(0, 0, 0, 0.25);
+    border-radius: 0.5em;
+    flex-grow: 1;
+    margin-left: var(--gap);
+    padding-bottom: calc(4*var(--gap));
+    padding-top: var(--gap);
+
     h2 {
+        font-family: 'Permanent Marker', cursive;
         font-size: 2.5em;
         margin-bottom: 1em;
         text-decoration: underline;
         letter-spacing: 0.05em;
     }
-    
+
     table {
         width: 100%;
-        
+
         .mat-mdc-row {
             cursor: move;
             transition: background-color 0.2s ease;
-            
+
             &:hover {
                 background-color: var(--faded-border-color);
             }
-            
+
             &.cdk-drag-placeholder {
                 opacity: 0.4;
                 background-color: var(--faded-border-color) !important;
             }
-            
+
             &.cdk-drag-animating {
                 transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
             }
         }
-        
+
         .cdk-drop-list {
             display: block;
         }
-        
+
         .mat-mdc-header-cell {
             font-weight: bold;
             position: sticky;
@@ -89,12 +116,25 @@
             font-family: var(--font-family) !important;
             font-size: 1.4em !important;
         }
-        
+
         .mat-mdc-cell {
             background-color: var(--background-color);
             padding: 0.5em;
             font-family: var(--font-family) !important;
             font-size: 1em !important;
         }
+    }
+
+    .register-button {
+        width: 70%;
+    }
+
+    .spacer {
+        flex-grow: 1;
+    }
+
+    .discord-container {
+        width: 100%;
+        padding: 0 15%;
     }
 }
