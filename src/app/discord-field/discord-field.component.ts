@@ -17,7 +17,7 @@ export class DiscordFieldComponent {
     }
 
     isLoggedIn() {
-        return this.discordAuthService.getLoggedInUser() !== null;
+        return this.discordAuthService.isLoggedIn();
     }
 
     getAvatarUrl() {

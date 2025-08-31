@@ -1,18 +1,19 @@
-import { Component, inject, ViewChild, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, inject, ViewChild, OnInit, HostListener, AfterViewInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { PolygonSelectComponent } from '../polygon-select/polygon-select.component';
 import { RendererConfigProvider } from '../polygon-select/RendererConfigProvider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
-import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { MapService } from '../map.service';
+import { CdkDragDrop, DragDropModule, moveItemInArray, CdkDragStart, CdkDragEnd } from '@angular/cdk/drag-drop';
 import { DiscordLoginComponent } from '../discord-login/discord-login.component';
 import { DiscordAuthenticationService } from '../services/discord-auth.service';
 import { DiscordFieldComponent } from '../discord-field/discord-field.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { CK3Service } from '../services/gamedata/CK3Service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { SignupAssetsService, SignupAssetsData } from './SignupAssetsService';
+import { MCSignupService } from '../services/MCSignupService';
 
 export interface TableItem {
     key: string;
@@ -21,11 +22,11 @@ export interface TableItem {
 
 @Component({
     selector: 'app-mcsignup',
-    imports: [PolygonSelectComponent, DiscordLoginComponent, MatButtonModule, MatIconModule, MatTableModule, DragDropModule, DiscordFieldComponent, MatProgressSpinnerModule],
+    imports: [CommonModule, PolygonSelectComponent, DiscordLoginComponent, MatButtonModule, MatIconModule, MatTableModule, DragDropModule, DiscordFieldComponent, MatProgressSpinnerModule, MatTooltipModule],
     templateUrl: './mcsignup.component.html',
     styleUrl: './mcsignup.component.scss'
 })
-export class MCSignupComponent implements OnInit {
+export class MCSignupComponent implements OnInit, AfterViewInit {
 
     @ViewChild(PolygonSelectComponent) polygonSelectComponent!: PolygonSelectComponent;
 
@@ -34,27 +35,79 @@ export class MCSignupComponent implements OnInit {
 
     displayedColumns: string[] = ['index', 'value'];
     dataSource: TableItem[] = [];
+    userPicksSub: any;
+    aggregatedSignupsCount: number = 0;
+    perRegionSignups: Map<string, number> = new Map();
+
+    get tableDataSource(): TableItem[] {
+        const emptyRowsCount = this.MAX_SELECTIONS - this.dataSource.length;
+        const emptyRows: TableItem[] = Array(emptyRowsCount).fill(null).map(() => ({
+            key: '',
+            name: '-'
+        }));
+        return [...this.dataSource, ...emptyRows];
+    }
+
+    getEmptyRows(): any[] {
+        const emptyRowsCount = this.MAX_SELECTIONS - this.dataSource.length;
+        return Array(emptyRowsCount).fill(null);
+    }
+
+    isDraggableRow = (index: number, item: TableItem) => item.key !== '';
+    isEmptyRow = (index: number, item: TableItem) => item.key === '';
 
     selectionCallback = this.onSelect.bind(this);
+    meshBuddiesProvider: (key: string) => string[] = (key: string) => {
+        const data = this.signupAssetsService.getCurrentData();
+        if (!data?.clusterManager) {
+            return [key];
+        }
+        return data.clusterManager.getBuddies(key);
+    };
+    /*
+     const tooltipProvider = (key: string) => {
+                    if (!clusterManager) {
+                        return key;
+                    }
+                    ck3.localise(key);
+                    return "<i>" + ck3.localise(key) + "</i><br><strong>" + clusterManager.getClusterKey(key)! + "</strong>";
+                };*/
+    tooltipProvider: (key: string) => string = (key: string) => {
+        const data = this.signupAssetsService.getCurrentData();
+        const ck3 = data!.ck3;
+        const clusterManager = data!.clusterManager!;
+        const clusterKey = clusterManager.getClusterKey(key)!;
+        let tooltip = "<i>" + ck3.localise(key) + "</i><br><strong>" + clusterKey + "</strong>";
+        if (this.perRegionSignups.has(clusterKey)) {
+            const plural = this.perRegionSignups.get(clusterKey) !== 1 ? 's' : '';
+            tooltip += `<br>(${this.perRegionSignups.get(clusterKey)} registered player${plural})`;
+        } else {
+            tooltip += "<br><small>(be the first to sign up!)</small>";
+        }
+        return tooltip;
+    }
 
     configProvider: RendererConfigProvider;
 
-    constructor(private mapService: MapService, protected discordAuthService: DiscordAuthenticationService, private ck3Service: CK3Service, private signupAssetsService: SignupAssetsService) {
+    constructor(
+        protected discordAuthService: DiscordAuthenticationService,
+        private signupAssetsService: SignupAssetsService,
+        private mcSignupService: MCSignupService
+    ) {
         const colorMap = new Map<string, number>();
         this.configProvider = new RendererConfigProvider(colorMap);
     }
 
     ngOnInit() {
-        /*
-        this.ck3Service.downloadJsonFromFileUrl("https://codingafterdark.de/ck3/" + "/common/landed_titles/00_landed_titles.txt", "landed_titles.json").subscribe({
-            next: () => {
-                console.log("Downloaded landed titles JSON");
+        this.mcSignupService.getAggregatedRegistrations$().subscribe({
+            next: (picks: Map<string, number>) => {
+                this.aggregatedSignupsCount = Array.from(picks.values()).reduce((a, b) => a + b, 0) / this.MAX_SELECTIONS;
+                this.perRegionSignups = picks;
             },
-            error: (error) => {
-                console.error("Error downloading landed titles JSON:", error);
+            error: () => {
+                this.aggregatedSignupsCount = -1;
             }
         });
-        */
         this.signupAssetsService.loadMapData().subscribe({
             next: (data: SignupAssetsData) => {
                 if (this.polygonSelectComponent) {
@@ -65,18 +118,21 @@ export class MCSignupComponent implements OnInit {
                 console.error('Error loading map data:', error);
             }
         });
-        /*
-        const fileNames = ["Lombardy", "Sicily", "Iberia", "Maghreb", "WestAfrica", "Egypt"];
-        const regionLists = new Map<string, any[]>();
-        fileNames.forEach(async (name) => {
-            const response = await fetch(`http://127.0.0.1:5500/public/regions/${name}.json`);
-            if (response.ok) {
-                const json = await response.json();
-                regionLists.set(name, json ?? []);
-                console.log(regionLists);
+        this.userPicksSub = this.mcSignupService.userPicks$.subscribe({
+            next: (picks: string[]) => {
+                this.dataSource = picks.map((key: string) => ({
+                    key,
+                    name: key
+                }));
+                this.dataSource = [...this.dataSource];
+                if (this.polygonSelectComponent) {
+                    this.polygonSelectComponent.setLockedStates(this.dataSource.map(item => item.key), true, false);
+                }
+            },
+            error: (err) => {
+                console.error('Failed to load registration:', err);
             }
         });
-        */
     }
 
     ngAfterViewInit() {
@@ -94,6 +150,11 @@ export class MCSignupComponent implements OnInit {
             const data = this.signupAssetsService.getCurrentData();
             if (data) {
                 this.initializeMapWithData(data);
+                const regionKeys = this.dataSource.map(item => item.key);
+                for (const key of regionKeys) {
+                    const reprKey = data?.clusterManager.getCluster2Keys(key)[0];
+                    this.polygonSelectComponent.setLockedState(reprKey, true, false);
+                }
             }
         }
     }
@@ -102,10 +163,8 @@ export class MCSignupComponent implements OnInit {
         if (!this.polygonSelectComponent || !data.meshes || !data.configProvider) {
             return;
         }
-
         this.configProvider = data.configProvider;
         this.polygonSelectComponent.setMeshes(data.meshes);
-        
         setTimeout(() => {
             this.polygonSelectComponent.forceResize();
             this.polygonSelectComponent.fitCameraToPolygons(0.1);
@@ -113,7 +172,6 @@ export class MCSignupComponent implements OnInit {
         setTimeout(() => {
             this.polygonSelectComponent.forceResize();
         }, 500);
-
         const stats = this.signupAssetsService.getMeshStatistics(data.meshes);
         console.log(`Loaded ${stats.meshCount} polygon meshes with ${stats.triangleCount.toLocaleString()} triangles total`);
     }
@@ -123,25 +181,68 @@ export class MCSignupComponent implements OnInit {
         this.dataSource = [...this.dataSource];
     }
 
+    onDragStarted(event: CdkDragStart) { }
+
+    onDragEnded(event: CdkDragEnd) { }
+
     onSelect(key: string, locked: boolean) {
-        if (this.dataSource.length == this.MAX_SELECTIONS && locked) {
-            this.polygonSelectComponent.setLockedState(key, false, false);
-            this.openSnackBar("Maximum selections reached!", "OK");
+        const data = this.signupAssetsService.getCurrentData();
+        if (!data?.clusterManager) {
             return;
         }
-        if (locked) {
-            this.dataSource = this.dataSource.concat([{ key: key, name: key }]);
-        } else {
-            this.dataSource = this.dataSource.filter(item => item.key !== key);
+        const clusterKey = data.clusterManager.getClusterKey(key);
+        if (!clusterKey) {
+            return;
         }
+        const picks = this.dataSource.map(item => item.key);
+        const existingItem = picks.includes(clusterKey);
+        let newPicks: string[];
+        if (locked) {
+            if (picks.length >= this.MAX_SELECTIONS && !existingItem) {
+                this.polygonSelectComponent.setLockedState(key, false, false);
+                this.openSnackBar("Maximum selections reached!", "OK");
+                return;
+            }
+            if (!existingItem) {
+                newPicks = [...picks, clusterKey];
+            } else {
+                newPicks = picks;
+            }
+        } else {
+            newPicks = picks.filter(k => k !== clusterKey);
+        }
+        // Update picks in service
+        this.mcSignupService.setUserPicks(newPicks);
     }
 
     register() {
-        console.log("REGISTER")
+        if (!this.canRegister()) {
+            this.openSnackBar("Cannot register: check login and selections", "OK");
+            return;
+        }
+        this.mcSignupService.registerUserPicks$(this.dataSource.map(item => item.key)).subscribe({
+            next: () => {
+                this.openSnackBar("Registration successful!", "OK");
+            },
+            error: (err: any) => {
+                this.openSnackBar("Registration failed: " + (err?.message || "Unknown error"), "OK");
+                console.error('Registration error:', err);
+            }
+        });
     }
 
     canRegister() {
         return this.discordAuthService.isLoggedIn() && this.dataSource.length == this.MAX_SELECTIONS;
+    }
+
+    getDisabledTooltip(): string {
+        if (!this.discordAuthService.isLoggedIn()) {
+            return 'Please log in with Discord to signup';
+        }
+        if (this.dataSource.length < this.MAX_SELECTIONS) {
+            return `Please select ${this.MAX_SELECTIONS} regions (currently ${this.dataSource.length}/${this.MAX_SELECTIONS})`;
+        }
+        return '';
     }
 
     @HostListener('window:resize', ['$event'])
@@ -163,5 +264,9 @@ export class MCSignupComponent implements OnInit {
 
     isLoading() {
         return this.signupAssetsService.isLoading();
+    }
+
+    getRegisteredPlayersCount() {
+        return -1;
     }
 }

@@ -1,4 +1,6 @@
 @use '@angular/material' as mat;
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@200;300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
 
 html {
     color-scheme: light dark;
@@ -7,19 +9,21 @@ html {
                 tertiary: mat.$orange-palette,
                 theme-type: light,
             ),
-            typography: Roboto,
+            typography: 'Titillium Web',
             density: 0));
 }
 
 :root {
     --background-color: rgb(32, 32, 32);
+    --background-color-transparent: rgba(32, 32, 32, 0.8);
     --lighter-background-color: rgb(37, 37, 37);
     --text-color: rgba(255, 255, 255, 0.9);
     --border-color: var(--text-color);
     --faded-border-color: rgba(255, 255, 255, 0.2);
     --faded-text-color: rgba(255, 255, 255, 0.5);
     --hacker-font: 'Inconsolata', monospace;
-    --font-family: "Manrope", sans-serif;
+    --font-family: "Titillium Web", sans-serif;
+    --header-font-family: "Montserrat", sans-serif;
     --void-color: rgb(20, 20, 25);
 
     --dark-theme-text-color: rgb(255, 255, 255);
@@ -37,6 +41,11 @@ html {
     
     --mat-sys-outline: var(--border-color);
     --mat-sys-primary: var(--text-color);
+
+    --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --box-shadow-small: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --box-shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --box-shadow-extra-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .light-theme {
@@ -66,6 +75,12 @@ html {
     --faded-border-color: rgba(255, 255, 255, 0.2);
     --faded-text-color: rgba(255, 255, 255, 0.5);
     --void-color: rgb(20, 20, 25);
+
+    --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+    --box-shadow-small: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    --box-shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+    --box-shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    --box-shadow-extra-large: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 
     --mat-sys-surface: var(--dark-theme-background-color);
     --mat-sys-on-surface: var(--dark-theme-text-color);

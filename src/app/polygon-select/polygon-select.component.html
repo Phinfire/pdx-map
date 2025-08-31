@@ -6,12 +6,14 @@
         <button class="corner-button" (click)="refreshButtonClicked(); $event.stopPropagation()" title="Reset to initial selection">
             <mat-icon>refresh</mat-icon>
         </button>
+    <!--
         <button class="corner-button" (click)="storeCurrentLockSelectionToFile(); $event.stopPropagation()" title="Save current selection">
             <mat-icon>save</mat-icon>
         </button>
         <button class="corner-button" (click)="loadSelectionFromFile(); $event.stopPropagation()" title="Load selection">
             <mat-icon>menu_book</mat-icon>
         </button>
+    -->
         <button class="corner-button" (click)="exportMapImage(); $event.stopPropagation()" title="Export map as image">
             <mat-icon>camera_alt</mat-icon>
         </button>
@@ -28,7 +30,7 @@
          [class.visible]="tooltipVisible"
          [class.above]="tooltipAbove"
          [style.left.px]="tooltipX" 
-         [style.top.px]="tooltipY">
-        {{ tooltipText }}
+         [style.top.px]="tooltipY"
+         [innerHTML]="tooltipText">
     </div>
 </div>

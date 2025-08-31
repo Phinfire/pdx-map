@@ -34,12 +34,38 @@ export class BaseHttpService {
         return await firstValueFrom(request$.pipe(timeout(this.timeoutMs)));
     }
 
+    makeRequest$<T = any>(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any, headers?: Record<string, string>): Observable<T> {
+        const httpHeaders = new HttpHeaders({
+            'Content-Type': 'application/json',
+            ...headers
+        });
+        switch (method) {
+            case 'GET':
+                return this.http.get<T>(url, { headers: httpHeaders }).pipe(timeout(this.timeoutMs));
+            case 'POST':
+                return this.http.post<T>(url, body, { headers: httpHeaders }).pipe(timeout(this.timeoutMs));
+            case 'PUT':
+                return this.http.put<T>(url, body, { headers: httpHeaders }).pipe(timeout(this.timeoutMs));
+            case 'DELETE':
+                return this.http.delete<T>(url, { headers: httpHeaders }).pipe(timeout(this.timeoutMs));
+            default:
+                throw new Error('Unsupported HTTP method');
+        }
+    }
+
     async makeAuthenticatedRequest<T = any>(url: string, token: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any, additionalHeaders?: Record<string, string>): Promise<T> {
         const headers = {
             'Authorization': `Bearer ${token}`,
             ...additionalHeaders
         };
-
         return this.makeRequest<T>(url, method, body, headers);
+    }
+
+    makeAuthenticatedRequest$<T = any>(url: string, token: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any, additionalHeaders?: Record<string, string>): Observable<T> {
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            ...additionalHeaders
+        };
+        return this.makeRequest$<T>(url, method, body, headers);
     }
 }

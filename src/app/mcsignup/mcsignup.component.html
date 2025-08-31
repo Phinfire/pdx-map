@@ -1,38 +1,62 @@
 <div class="main">
-    <div class="render-wrapper">
-        @if (isDataReady()) {
-            <app-polygon-select [rendererConfigProvider]="configProvider" [selectionCallback]="selectionCallback"></app-polygon-select>
-        }
-        @if (!isDataReady()) {
+    <div class="top">
+        <h1>Sign Up for the 2nd Mega Campaign or Else! <span>({{ aggregatedSignupsCount }} already signed up)</span>
+        </h1>
+    </div>
+    <div class="middle">
+        <div class="render-wrapper">
+            @if (isDataReady()) {
+            <app-polygon-select [rendererConfigProvider]="configProvider" [selectionCallback]="selectionCallback"
+                [tooltipProvider]="tooltipProvider" [meshBuddiesProvider]="meshBuddiesProvider"></app-polygon-select>
+            }
+            @if (!isDataReady()) {
             <mat-spinner></mat-spinner>
             <span class="loading-text">Loading...</span>
-        }
-    </div>
-    <div class="table-container">
-        <div class="discord-container">
-            <app-discord-field></app-discord-field>
-        </div>
-        <h2>Your Picks:</h2>
-        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" cdkDropList
-            (cdkDropListDropped)="drop($event)">
-            <ng-container matColumnDef="index">
-                <th mat-header-cell *matHeaderCellDef>Rank</th>
-                <td mat-cell *matCellDef="let element; let i = index">{{i + 1}}</td>
-            </ng-container>
-            <ng-container matColumnDef="value">
-                <th mat-header-cell *matHeaderCellDef>Item</th>
-                <td mat-cell *matCellDef="let element">{{element.name}}</td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;" cdkDrag [cdkDragData]="row"
-                class="draggable-row"></tr>
-        </table>
-        <button mat-flat-button color="primary" (click)="register()" [disabled]="!canRegister()" class="register-button">Register</button>
-        <div class="spacer"></div>
-        <div class="discord-container">
-            @if (!discordAuthService.isLoggedIn()) {
-                <app-discord-login></app-discord-login>
             }
+        </div>
+        <div class="table-container">
+            <div class="discord-container">
+                <app-discord-field></app-discord-field>
+            </div>
+            <h2>Your Picks:</h2>
+            <div class="table-wrapper">
+                <table mat-table class="mat-elevation-z8">
+                    <ng-container matColumnDef="index">
+                        <th mat-header-cell *matHeaderCellDef>Rank</th>
+                    </ng-container>
+                    <ng-container matColumnDef="value">
+                        <th mat-header-cell *matHeaderCellDef>Item</th>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                </table>
+
+                <div cdkDropList (cdkDropListDropped)="drop($event)" class="drop-list">
+                    <div *ngFor="let item of dataSource; let i = index" cdkDrag [cdkDragData]="item"
+                        class="table-row draggable-row" [cdkDragDisabled]="false"
+                        (cdkDragStarted)="onDragStarted($event)" (cdkDragEnded)="onDragEnded($event)">
+                        <div class="rank-cell">{{i + 1}}</div>
+                        <div class="item-cell">{{item.name}}</div>
+                        <div *cdkDragPreview></div>
+                    </div>
+                </div>
+
+                <div class="empty-rows">
+                    <div *ngFor="let emptyRow of getEmptyRows(); let i = index" class="table-row empty-row">
+                        <div class="rank-cell">{{dataSource.length + i + 1}}</div>
+                        <div class="item-cell">-</div>
+                    </div>
+                </div>
+            </div>
+            @if (discordAuthService.isLoggedIn()) {
+            <button mat-flat-button color="primary" (click)="register()" [disabled]="!canRegister()"
+                class="register-button" [matTooltip]="getDisabledTooltip()" [matTooltipDisabled]="canRegister()">Sign
+                Up</button>
+            }
+            <div class="discord-container">
+                @if (!discordAuthService.isLoggedIn()) {
+                <app-discord-login></app-discord-login>
+                }
+            </div>
         </div>
     </div>
 </div>

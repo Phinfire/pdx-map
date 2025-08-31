@@ -8,7 +8,7 @@ import { RendererConfigProvider } from '../polygon-select/RendererConfigProvider
 })
 export class ThreeService {
 
-    public static makeGeoJsonPolygons(geojson: any, configProvider: RendererConfigProvider) {
+    public static makeGeoJsonPolygons(geojson: any, configProvider: RendererConfigProvider, shouldUseDotTexture: (key: string) => boolean, forceNonInteractive: (key: string) => boolean) {
         const meshes: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string })[] = [];
         const thickness = 1.5;
         const mapScale = 400.0;
@@ -24,10 +24,10 @@ export class ThreeService {
         filteredFeatures.forEach((feature: any) => {
             const type = feature.geometry.type;
             const coords = feature.geometry.coordinates;
-            const interactive = feature.properties.type != "wasteland";
             const key = feature.properties.key ? feature.properties.key : "";
+            const interactive = feature.properties.type != "wasteland" && !forceNonInteractive(key);
             const featureName = feature.properties.name || key || 'unnamed';
-            
+
             if (!key2Geos.has(key)) {
                 key2Geos.set(key, []);
                 key2isInteractive.set(key, interactive);
@@ -46,7 +46,7 @@ export class ThreeService {
                                 key2Geos.get(key)!.push(geometry);
                             }
                         } catch (err) {
-                            console.warn(`Skipping invalid polygon ${polyIndex} in MultiPolygon feature ${featureName}:`, err);
+                            console.info(`Skipping invalid polygon ${polyIndex} in MultiPolygon feature ${featureName}:`, err);
                         }
                     });
                 } else {
@@ -62,30 +62,86 @@ export class ThreeService {
                 console.warn(`No valid geometries found for key: ${key}`);
                 continue;
             }
-            
+
             const mergedGeo = mergeGeometries(geos);
             const interactive = key2isInteractive.get(key)!;
             const color = configProvider.getColor(key, interactive, false, false);
             if (interactive) {
-                const mesh = ThreeService.meshFromGeometry(mergedGeo, color, interactive, key);
+                const mesh = ThreeService.meshFromGeometry(mergedGeo, color, interactive, key, shouldUseDotTexture);
                 meshes.push(mesh);
             } else {
                 nonInteractiveGeos.push(mergedGeo);
             }
         }
-        
+
         if (nonInteractiveGeos.length > 0) {
             const inactiveColor = configProvider.getColor("", false, false, false);
-            const nonInteractiveMesh = ThreeService.meshFromGeometry(mergeGeometries(nonInteractiveGeos), inactiveColor, false, "");
+            const nonInteractiveMesh = ThreeService.meshFromGeometry(mergeGeometries(nonInteractiveGeos), inactiveColor, false, "", shouldUseDotTexture);
             meshes.push(nonInteractiveMesh);
         }
         return meshes;
-        //const border = ThreeService.addAABBBorder(allCoords, centerFn, borderColor);
-        //if (border) addFunc(border);
     }
 
-    public static meshFromGeometry(geometry: THREE.BufferGeometry, color: number, interactive: boolean, key: string) {
-        const material = new THREE.MeshPhongMaterial({ color: color, flatShading: true });
+    private static makeDotTexture(dotFrequency: number = 1.0) {
+        const size = 64;
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) {
+            console.warn('Could not get 2D context for dot texture');
+            return null;
+        }
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, size, size);
+
+        ctx.fillStyle = "#000000";
+        const baseSpacing = 32;
+        const spacing = baseSpacing / dotFrequency;
+        const dotRadius = Math.max(3, spacing * 0.25);
+
+        const dotsPerRow = Math.floor(size / spacing);
+        const actualSpacing = size / dotsPerRow;
+
+        const startOffset = actualSpacing / 2;
+
+        for (let i = 0; i < dotsPerRow; i++) {
+            for (let j = 0; j < dotsPerRow; j++) {
+                const x = startOffset + i * actualSpacing;
+                const y = startOffset + j * actualSpacing;
+
+                ctx.beginPath();
+                ctx.arc(x, y, dotRadius, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(2, 2);
+        return texture;
+    }
+
+    public static meshFromGeometry(geometry: THREE.BufferGeometry, color: number, interactive: boolean, key: string, shouldUseDotTexture?: (key: string) => boolean) {
+        let material: THREE.MeshPhongMaterial;
+        const useDotTexture = shouldUseDotTexture ? shouldUseDotTexture(key) : false;
+
+        if (useDotTexture) {
+            const dotTexture = ThreeService.makeDotTexture(0.6);
+            if (dotTexture) {
+                material = new THREE.MeshPhongMaterial({
+                    color: color,
+                    map: dotTexture,
+                    flatShading: true
+                });
+            } else {
+                material = new THREE.MeshPhongMaterial({ color: color, flatShading: true });
+            }
+        } else {
+            material = new THREE.MeshPhongMaterial({ color: color, flatShading: true });
+        }
+
         const mesh = new THREE.Mesh(geometry, material) as THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key?: string };
         mesh.targetZ = 0;
         mesh.locked = false;
@@ -184,28 +240,26 @@ export class ThreeService {
             return null;
         }
 
-        // Add validation for the outer ring
         if (!coords[0] || !Array.isArray(coords[0]) || coords[0].length < 3) {
-            console.warn('Invalid outer ring coordinates: must have at least 3 points. Got:', coords[0]);
+            console.info('Invalid outer ring coordinates: must have at least 3 points. Got:', coords[0]);
             return null;
         }
 
         const shape = new THREE.Shape();
 
-        // Validate each coordinate point before processing
         const outerRing = coords[0];
         let validPointsAdded = 0;
 
         outerRing.forEach(([x, y]: [number, number], i: number) => {
             if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) {
                 console.warn(`Invalid coordinate at index ${i}:`, [x, y]);
-                return; // Skip invalid points
+                return;
             }
 
             const [nx, ny] = normFn(x, y);
             if (isNaN(nx) || isNaN(ny)) {
                 console.warn(`Transform resulted in NaN at index ${i}:`, [x, y], '->', [nx, ny]);
-                return; // Skip points that transform to NaN
+                return;
             }
 
             if (validPointsAdded === 0) {
@@ -223,7 +277,6 @@ export class ThreeService {
 
         shape.closePath();
 
-        // Process holes with similar validation
         for (let i = 1; i < coords.length; i++) {
             if (!coords[i] || !Array.isArray(coords[i]) || coords[i].length < 3) {
                 console.warn(`Skipping invalid hole at index ${i}:`, coords[i]);
@@ -355,7 +408,7 @@ export class ThreeService {
                     const z3 = positions[i + 8];
 
                     if (z1 > threshold || z2 > threshold || z3 > threshold) {
-                        const uvStart = triangleIndex * 6; // 3 vertices × 2 UV components
+                        const uvStart = triangleIndex * 6;
                         for (let j = 0; j < 6; j++) {
                             newUVs.push(uvs[uvStart + j]);
                         }
