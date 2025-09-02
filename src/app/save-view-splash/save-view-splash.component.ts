@@ -1,10 +1,10 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
-import { PdxFileService } from '../services/pdx-file.service';
 import { CommonModule } from '@angular/common';
 import { SaveViewComponent } from '../save-view/save-view.component';
 import { HttpClient } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
-import { Vic3Save } from '../model/vic/Vic3Save';
+import { PdxFileService } from '../../services/pdx-file.service';
+import { Vic3Save } from '../../model/vic/Vic3Save';
 
 @Component({
     selector: 'app-save-view-splash',

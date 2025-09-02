@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Eu4Save } from './model/eu4/Eu4Save';
 import { map } from 'rxjs/operators';
 
 @Injectable({

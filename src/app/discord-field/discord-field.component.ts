@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
-import { DiscordAuthenticationService } from '../services/discord-auth.service';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { DiscordAuthenticationService } from '../../services/discord-auth.service';
 
 @Component({
     selector: 'app-discord-field',
@@ -12,9 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 })
 export class DiscordFieldComponent {
 
-    constructor(private discordAuthService: DiscordAuthenticationService) {
-
-    }
+    private discordAuthService: DiscordAuthenticationService = inject(DiscordAuthenticationService);
 
     isLoggedIn() {
         return this.discordAuthService.isLoggedIn();

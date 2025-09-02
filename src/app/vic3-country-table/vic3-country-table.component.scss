@@ -27,6 +27,7 @@
 
 table {
     border: 1px solid var(--faded-border-color);
+    border-radius: 0.5em;
 }
 
 table th {
@@ -34,11 +35,20 @@ table th {
     position: sticky;
     top: 0;
     background-color: var(--background-color);
+    border-top-left-radius: 0.5em;
+    border-top-right-radius: 0.5em;
 }
 
 table td {
     background-color: var(--background-color);
     padding: 0.5em;
+}
+
+table tr:last-child td:first-child {
+    border-bottom-left-radius: 0.5em;
+}
+table tr:last-child td:last-child {
+    border-bottom-right-radius: 0.5em;
 }
 
 .negative-cell {

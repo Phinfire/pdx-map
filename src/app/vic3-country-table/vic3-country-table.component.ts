@@ -3,11 +3,11 @@ import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule, MAT_TOOLTIP_DEFAULT_OPTIONS, MatTooltipDefaultOptions } from '@angular/material/tooltip';
 import { CommonModule } from '@angular/common';
-import { TableColumn } from '../util/table/TableColumn';
 import { FormsModule } from '@angular/forms';
 import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem, CdkMenuModule } from '@angular/cdk/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { PlotViewComponent } from '../plot-view/plot-view.component';
+import { TableColumn } from '../../util/table/TableColumn';
 
 export const myCustomTooltipDefaults: MatTooltipDefaultOptions = {
     showDelay: 0,

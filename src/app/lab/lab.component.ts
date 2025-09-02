@@ -1,19 +1,14 @@
-import { Component } from '@angular/core';
-import { CK3Service } from '../services/gamedata/CK3Service';
-import { HttpClient } from '@angular/common/http';
-import { LegacyCk3Save } from '../model/ck3/LegacyCk3Save';
-import { Ck3Save } from '../model/Ck3Save';
-import { TableComponent } from '../vic3-country-table/vic3-country-table.component';
-import { TableColumn } from '../util/table/TableColumn';
-import { Ck3Player } from '../model/ck3/Player';
-import { Jomini } from 'jomini';
-import JSZip from 'jszip';
-import { DiscordLoginComponent } from '../discord-login/discord-login.component';
-import { MatButton, MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatDividerModule } from '@angular/material/divider';
+import { HttpClient } from "@angular/common/http";
+import { Component } from "@angular/core";
+import { MatButtonModule } from "@angular/material/button";
+import { MatDividerModule } from "@angular/material/divider";
+import { MatIconModule } from "@angular/material/icon";
+import { Jomini } from "jomini";
+import { CK3Service } from "../../services/gamedata/CK3Service";
+import { TableColumn } from "../../util/table/TableColumn";
+import { Ck3Player } from "../../model/ck3/Player";
+import { Ck3Save } from "../../model/Ck3Save";
 
-// TableComponent, DiscordLoginComponent
 @Component({
     selector: 'app-lab',
     imports: [MatButtonModule, MatDividerModule, MatIconModule],

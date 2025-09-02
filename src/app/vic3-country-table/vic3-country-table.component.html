@@ -7,14 +7,21 @@
         </th>
         <td mat-cell *matCellDef="let element; let i = index"
             [ngClass]="{'negative-cell': col.cellValue(element, i) < 0}">
-            <span [matTooltip]="col.cellTooltip(element, i)"
-                [matTooltipDisabled]="!showTooltips || !col.cellTooltip(element, i)"
-                matTooltipClass="tooltip-secret">
-                {{ col.visibleCellValue(element, i) }}
-                <sub *ngIf="col.subscript && col.subscript(element)">
-                    {{ col.subscript(element) }}
-                </sub>
-            </span>
+            <ng-container *ngIf="col.isImage; else textCell">
+                <img [src]="col.visibleCellValue(element, i)"
+                     alt="🖼️"
+                     style="max-width: 32px; max-height: 32px; vertical-align: middle;" />
+            </ng-container>
+            <ng-template #textCell>
+                <span [matTooltip]="col.cellTooltip(element, i)"
+                    [matTooltipDisabled]="!showTooltips || !col.cellTooltip(element, i)"
+                    matTooltipClass="tooltip-secret">
+                    {{ col.visibleCellValue(element, i) }}
+                    <sub *ngIf="col.subscript && col.subscript(element)">
+                        {{ col.subscript(element) }}
+                    </sub>
+                </span>
+            </ng-template>
         </td>
     </ng-container>
 

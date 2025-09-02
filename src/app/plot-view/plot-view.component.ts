@@ -1,6 +1,5 @@
-import { Component, OnInit, ElementRef, Inject } from '@angular/core';
 import * as d3 from 'd3';
-import { TableColumn } from '../util/table/TableColumn';
+import { Component, OnInit, ElementRef, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Plotable } from './plot/Plotable';
 

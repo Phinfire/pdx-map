@@ -1,6 +1,5 @@
 
 import { Component, inject } from '@angular/core';
-import { DiscordAuthenticationService } from '../services/discord-auth.service';
 import { CommonModule } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +7,7 @@ import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Observable } from 'rxjs';
+import { DiscordAuthenticationService } from '../../services/discord-auth.service';
 
 const DISCORD_LOGO = `
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-discord" viewBox="0 0 16 16">

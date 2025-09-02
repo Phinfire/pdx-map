@@ -4,9 +4,9 @@ import { Component, Input, ViewChild } from '@angular/core';
 import { ElementRef } from '@angular/core';
 import { MapService } from '../map.service';
 import { HttpClient } from '@angular/common/http';
-import { PdxFileService } from '../services/pdx-file.service';
-import { Eu4Save } from '../model/eu4/Eu4Save';
 import { IHasKey, MapEU4DataProvider } from './config/MapDataProvider';
+import { PdxFileService } from '../../services/pdx-file.service';
+import { Eu4Save } from '../../model/eu4/Eu4Save';
 
 @Component({
     selector: 'app-map',
