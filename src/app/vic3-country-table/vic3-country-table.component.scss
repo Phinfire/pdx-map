@@ -7,7 +7,7 @@
     box-sizing: border-box;
     align-items: center;
     justify-content: flex-start;
-    padding: 3em 5em;
+    //padding: 3em 5em;
     max-height: 100%;
     @include mat.table-overrides((row-item-container-height: 3em,
             row-item-label-text-size: 1em,
@@ -19,9 +19,6 @@
             header-headline-color: var(--text-color),
             header-headline-font: var(--font-family) var(--font-weight-bold),
             row-item-label-text-font: var(--font-family) var(--font-weight-regular)
-        ));
-    @include mat.dialog-overrides((container-color: orange,
-            subhead-color: red,
         ));
 }
 
@@ -41,6 +38,16 @@ table th {
 
 table td {
     background-color: var(--background-color);
+    padding: 0.5em;
+}
+
+table td img {
+    max-width: 1.4em;
+    max-height: 1.4em;
+    vertical-align: middle;
+}
+
+table td:not(:has(img)) {
     padding: 0.5em;
 }
 

@@ -9,6 +9,7 @@ export class RulerTier {
     public static readonly EMPEROR = new RulerTier("EMPEROR", 5);
 
     public static TIERS = [
+        RulerTier.NONE,
         RulerTier.BARON,
         RulerTier.COUNT,
         RulerTier.DUKE,

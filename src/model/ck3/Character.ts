@@ -159,12 +159,15 @@ export class Character {
     }
 
     public getCharacterTier() : RulerTier {
-        return this.isLanded() ?  this.getHighestTitle().getTier() : RulerTier.NONE;
+        return this.isLanded() ?  this.getHighestTitle()!.getTier() : RulerTier.NONE;
     }
 
     public getHighestTitle() {
         const titles = this.getTitles();
-        return titles.reduce((prev: AbstractLandedTitle, current: AbstractLandedTitle) => prev.getTier().compare(current.getTier()) > 0 ? prev : current);
+        if (titles.length === 0) {
+            return null;
+        }
+        return titles.reduce((prev: AbstractLandedTitle, current: AbstractLandedTitle) => prev.getTier().compare(current.getTier()) > 0 ? prev : current, titles[0]);
     }
 
     public getDomainBaronies() {

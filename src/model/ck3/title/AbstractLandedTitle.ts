@@ -1,15 +1,18 @@
 import { RGB } from "../../../util/RGB";
+import { Character } from "../Character";
 import { CK3 } from "../CK3";
 import { RulerTier } from "../RulerTier";
 import { ICk3Save } from "../save/ICk3Save";
 
 export abstract class AbstractLandedTitle {
 
-    private holderIndex: number;
+    private holderIndex: number | null = null;
     private deFactoLiegeIndex: number | null;
 
     protected constructor(private key: string, holder: string, deFactoLiege: string | null, protected save: ICk3Save, protected ck3: CK3) {
-        this.holderIndex = parseInt(holder);
+        if (holder) {
+            this.holderIndex = parseInt(holder);
+        }
         this.deFactoLiegeIndex = deFactoLiege ? parseInt(deFactoLiege) : null;
     }
 
@@ -24,6 +27,9 @@ export abstract class AbstractLandedTitle {
     }
 
     public getHolder() {
+        if (this.holderIndex === null) {
+            return null;
+        }
         return this.save.getCharacter(this.holderIndex)!;
     }
 
@@ -47,7 +53,10 @@ export abstract class AbstractLandedTitle {
     }
     
     public getUltimatePlayerHeldLiegeTitle(): AbstractLandedTitle | null {
-        const playerName = this.getHolder().getPlayerName();
+        if (this.getHolder() === null) {
+            return null;
+        }
+        const playerName = this.getHolder()!.getPlayerName();
         if (playerName != null) {
             return this;
         }

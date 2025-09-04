@@ -4,7 +4,7 @@ import { DiscordAuthenticationService } from "./discord-auth.service";
 import { BaseHttpService } from "./base-http.service";
 import { Observable, throwError, from, of, EMPTY, BehaviorSubject, Subject, merge } from 'rxjs';
 import { switchMap, catchError, map } from 'rxjs/operators';
-import { DiscordUser } from "../util/DiscordUser";
+import { DiscordUser } from "../model/social/DiscordUser";
 
 export interface Signup {
     discord_id: string,

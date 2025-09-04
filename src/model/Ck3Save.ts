@@ -25,6 +25,7 @@ export class Ck3Save implements ICk3Save {
 
     static fromRawData(data: any, ck3: CK3): Ck3Save {
         const save = new Ck3Save(ck3);
+        console.log("Initializing CK3 Save with data:", data);
         save.initialize(data);
         return save;
     }
@@ -41,6 +42,8 @@ export class Ck3Save implements ICk3Save {
         this.landedTitles.forEach((title, index) => {
             this.titleKey2Index.set(title.getKey(), index);
         });
+        this.livingCharacters = data.living || {};
+        this.deadUnprunableCharacters = data.dead_unprunable || {};
         //console.log("Ck3Save initialized with players:", this.players.length, "faiths:", this.faiths.length, "cultures:", this.cultures.length, "titles:", this.titles.size);
     }
 
@@ -99,13 +102,14 @@ export class Ck3Save implements ICk3Save {
     }
 
     findDataAndCreateCharacter(data: any, characterId: string): Character | null {
+        const index = parseInt(characterId);
         let charData = null;
-        if (data.living && data.living[characterId]) {
-            charData = data.living[characterId];
-        } else if (data.dead_unprunable && data.dead_unprunable[characterId]) {
-            charData = data.dead_unprunable[characterId];
-        } else if (data.dead_prunable && data.dead_prunable[characterId]) {
-            charData = data.dead_prunable[characterId];
+        if (data.living && data.living[index]) {
+            charData = data.living[index];
+        } else if (data.dead_unprunable && data.dead_unprunable[index]) {
+            charData = data.dead_unprunable[index];
+        } else if (data.dead_prunable && data.dead_prunable[index]) {
+            charData = data.dead_prunable[index];
         } else {
             console.warn(`Character with ID ${characterId} not found in living or dead data.`);
             return null;
@@ -117,7 +121,7 @@ export class Ck3Save implements ICk3Save {
 
     getCharacter(characterId: number) {
         if (this.cachedCharacters.has("" + characterId)) {
-            return this.cachedCharacters.get("" + characterId);
+            return this.cachedCharacters.get("" + characterId)!;
         }
         return this.findDataAndCreateCharacter({
             living: this.livingCharacters,
@@ -150,7 +154,7 @@ export class Ck3Save implements ICk3Save {
     }
 
     getHeldTitles(character: Character): AbstractLandedTitle[] {
-        throw new Error("Method not implemented.");
+        return this.landedTitles.filter(title => title.getHolder() != null && title.getHolder()!.getCharacterId() === character.getCharacterId());
     }
 
     getPlayerNameByCharacterId(characterId: string): string | null {

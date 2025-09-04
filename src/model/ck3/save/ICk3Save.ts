@@ -11,7 +11,7 @@ export interface ICk3Save {
 
     getCurrentDate(): Date;
 
-    getCharacter(characterId: number): any;
+    getCharacter(characterId: number): Character | null;
 
     getDynastyHouseAndDynastyData(houseId: number): any;
 

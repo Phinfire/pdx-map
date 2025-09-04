@@ -1,14 +1,15 @@
+import * as THREE from 'three';
 import { Injectable, inject } from "@angular/core";
 import { BehaviorSubject, Observable, forkJoin, map, shareReplay } from "rxjs";
-import { MapService } from "../../map.service";
-import { ClusterManager } from "./ClusterManager";
-import { ThreeService } from "./ThreeService";
-import * as THREE from 'three';
-import { CK3Service } from "../../../services/gamedata/CK3Service";
-import { CK3 } from "../../../model/ck3/CK3";
-import { AbstractLandedTitle } from "../../../model/ck3/title/AbstractLandedTitle";
-import { Ck3Save } from "../../../model/Ck3Save";
-import { RendererConfigProvider } from "../../viewers/polygon-select/RendererConfigProvider";
+import { CK3 } from "../../model/ck3/CK3";
+import { AbstractLandedTitle } from "../../model/ck3/title/AbstractLandedTitle";
+import { Ck3Save } from "../../model/Ck3Save";
+import { CK3Service } from "../../services/gamedata/CK3Service";
+import { makeDotTexture, makeGeoJsonPolygons } from "../../util/geometry/threeGeometry";
+import { MapService } from "../map.service";
+import { RendererConfigProvider } from "../viewers/polygon-select/RendererConfigProvider";
+import { ClusterManager } from "./mcsignup/ClusterManager";
+import { RulerTier } from '../../model/ck3/RulerTier';
 
 export interface SignupAssetsData {
     geoJsonData: any;
@@ -21,7 +22,7 @@ export interface SignupAssetsData {
 
 class RegionConfig {
     constructor(public readonly regions: Region[],
-        public readonly topLevelKeysToInclude: string[]) {}
+        public readonly topLevelKeysToInclude: string[]) { }
 }
 
 class Region {
@@ -29,7 +30,7 @@ class Region {
     constructor(public readonly name: string,
         public readonly plusElements: Set<string>,
         public readonly minusElements: Set<string>,
-        public readonly baseElements: Set<string>) {}
+        public readonly baseElements: Set<string>) { }
 }
 
 @Injectable({
@@ -84,7 +85,11 @@ export class SignupAssetsService {
                 const forceNonInteractive = (key: string) => {
                     return keysToExclude.has(key) ? true : false;
                 };
-                const meshes = ThreeService.makeGeoJsonPolygons(geoJson, colorIn1066Provider, () => false, forceNonInteractive);
+                //const countyRealms = SignupAssetsService.findCountiesOwnedByAtMostDoubleCounts(ck3Save, 2);
+                //const countiesPartOfCountyRealms = new Set<string>();
+                //countyRealms.forEach(realm => realm.forEach(county => countiesPartOfCountyRealms.add(county)));
+                //const dotTexture = makeDotTexture(0.6);
+                const meshes = makeGeoJsonPolygons(geoJson, colorIn1066Provider, (countyKey) => null, forceNonInteractive);
                 const clusterManager = new ClusterManager(key2ClusterKey);
                 const data: SignupAssetsData = {
                     geoJsonData: geoJson,
@@ -100,6 +105,27 @@ export class SignupAssetsService {
             }),
             shareReplay(1)
         );
+    }
+
+    private static findCountiesOwnedByAtMostDoubleCounts(save: Ck3Save, k: number): string[][] {
+        const holder2CountyTitles = new Map<string, string[]>();
+        for (const title of save.getLandedTitles()) {
+            if (!title.getKey().startsWith("c_")) {
+                continue;
+            }
+            const holder = title.getHolder();
+            if (holder == null) {
+                console.warn(`Title ${title.getKey()} has no holder`);
+                continue;
+            }
+            if (holder && holder.getCharacterTier() == RulerTier.COUNT) {
+                if (!holder2CountyTitles.has(holder.getCharacterId())) {
+                    holder2CountyTitles.set(holder.getCharacterId(), []);
+                }
+                holder2CountyTitles.get(holder.getCharacterId())!.push(title.getKey());
+            }
+        }
+        return Array.from(holder2CountyTitles.values()).filter(titles => titles.length <= k).sort((a, b) => a.length - b.length);
     }
 
     private static collectAllChildren(ck3Save: Ck3Save, topLevelKeys: string[]): Set<string> {

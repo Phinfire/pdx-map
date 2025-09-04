@@ -8,9 +8,7 @@
         <td mat-cell *matCellDef="let element; let i = index"
             [ngClass]="{'negative-cell': col.cellValue(element, i) < 0}">
             <ng-container *ngIf="col.isImage; else textCell">
-                <img [src]="col.visibleCellValue(element, i)"
-                     alt="🖼️"
-                     style="max-width: 32px; max-height: 32px; vertical-align: middle;" />
+                <img [src]="col.visibleCellValue(element, i)" alt="" />
             </ng-container>
             <ng-template #textCell>
                 <span [matTooltip]="col.cellTooltip(element, i)"

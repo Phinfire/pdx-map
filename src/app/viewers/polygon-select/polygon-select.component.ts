@@ -152,12 +152,10 @@ export class PolygonSelectComponent implements AfterViewInit {
         const finalFilename = `screenshot_${sanitizedUrl}_${timestamp}`;
         let multiplierStr = prompt('Enter resolution multiplier (e.g. 2 for 2x, 4 for 4x):', '2');
         if (multiplierStr === null) {
-            // User cancelled
             return;
         }
         let multiplier = parseInt(multiplierStr, 10);
         if (isNaN(multiplier) || multiplier < 1) {
-            // Invalid input
             return;
         }
         const container = this.containerRef.nativeElement;

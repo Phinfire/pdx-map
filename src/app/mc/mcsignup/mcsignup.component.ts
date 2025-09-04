@@ -7,7 +7,7 @@ import { CdkDragDrop, DragDropModule, moveItemInArray, CdkDragStart, CdkDragEnd 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { SignupAssetsService, SignupAssetsData } from './SignupAssetsService';
+import { SignupAssetsService, SignupAssetsData } from './../SignupAssetsService';
 import { DiscordFieldComponent } from '../../discord-field/discord-field.component';
 import { DiscordLoginComponent } from '../../discord-login/discord-login.component';
 import { combineLatest } from 'rxjs';
@@ -16,6 +16,7 @@ import { MCSignupService } from '../../../services/MCSignupService';
 import { DynamicColorConfig } from '../../viewers/polygon-select/DynamicColorConfig';
 import { PolygonSelectComponent } from '../../viewers/polygon-select/polygon-select.component';
 import { RendererConfigProvider } from '../../viewers/polygon-select/RendererConfigProvider';
+import { TimerComponent } from '../../timer/timer.component';
 
 export interface TableItem {
     key: string;
@@ -24,7 +25,7 @@ export interface TableItem {
 
 @Component({
     selector: 'app-mcsignup',
-    imports: [CommonModule, PolygonSelectComponent, DiscordLoginComponent, MatButtonModule, MatIconModule, MatTableModule, DragDropModule, DiscordFieldComponent, MatProgressSpinnerModule, MatTooltipModule],
+    imports: [CommonModule, PolygonSelectComponent, DiscordLoginComponent, MatButtonModule, MatIconModule, MatTableModule, DragDropModule, DiscordFieldComponent, MatProgressSpinnerModule, MatTooltipModule, TimerComponent],
     templateUrl: './mcsignup.component.html',
     styleUrl: './mcsignup.component.scss'
 })
@@ -37,15 +38,13 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
 
     displayedColumns: string[] = ['index', 'value'];
     dataSource: TableItem[] = [];
-    userPicksSub: any;
+    subsToUnsubFromOnDestroy: any[] = [];
     aggregatedSignupsCount: number = 0;
     perRegionSignups: Map<string, number> = new Map();
 
-    endDate = new Date('2025-09-12T23:59:59');
-    timeLeft: { days: string, hours: string, minutes: string, seconds: string } = { days: "00", hours: "00", minutes: "00", seconds: "00" };
-    private timeIntervalId: any;
-
     private key2Value: Map<string, number> = new Map();
+
+    deadline = new Date('2025-09-13T00:00:00');
 
     get tableDataSource(): TableItem[] {
         const emptyRowsCount = this.MAX_SELECTIONS - this.dataSource.length;
@@ -133,7 +132,7 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
                 console.error('Error loading map data:', error);
             }
         });
-        this.userPicksSub = this.mcSignupService.userPicks$.subscribe({
+        const userPicksSub = this.mcSignupService.userPicks$.subscribe({
             next: (picks: string[]) => {
                 this.dataSource = picks.map((key: string) => ({
                     key,
@@ -148,36 +147,13 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
                 console.error('Failed to load registration:', err);
             }
         });
-
-        this.updateTimeLeft();
-        this.timeIntervalId = setInterval(() => {
-            this.updateTimeLeft();
-        }, 100);
+        this.subsToUnsubFromOnDestroy.push(userPicksSub);
     }
+
     ngOnDestroy() {
-        if (this.timeIntervalId) {
-            clearInterval(this.timeIntervalId);
+        for (const sub of this.subsToUnsubFromOnDestroy) {
+            sub.unsubscribe();
         }
-        if (this.userPicksSub) {
-            this.userPicksSub.unsubscribe();
-        }
-    }
-
-    private updateTimeLeft() {
-        const now = new Date();
-        let diff = Math.max(0, this.endDate.getTime() - now.getTime());
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        diff -= days * (1000 * 60 * 60 * 24);
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        diff -= hours * (1000 * 60 * 60);
-        const minutes = Math.floor(diff / (1000 * 60));
-        diff -= minutes * (1000 * 60);
-        const seconds = Math.floor(diff / 1000);
-        this.timeLeft = { days: this.padZero(days), hours: this.padZero(hours), minutes: this.padZero(minutes), seconds: this.padZero(seconds) };
-    }
-
-    private padZero(num: number): string {
-        return num.toString().padStart(2, '0');
     }
 
     ngAfterViewInit() {
@@ -228,9 +204,9 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
         this.dataSource = [...this.dataSource];
     }
 
-    onDragStarted(event: CdkDragStart) {}
+    onDragStarted(event: CdkDragStart) { }
 
-    onDragEnded(event: CdkDragEnd) {}
+    onDragEnded(event: CdkDragEnd) { }
 
     onSelect(key: string, locked: boolean) {
         const data = this.signupAssetsService.getCurrentData();

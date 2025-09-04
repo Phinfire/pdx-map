@@ -1,5 +1,4 @@
 @use '@angular/material' as mat;
-@import url('https://fonts.googleapis.com/css2?family=Inconsolata&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
 
 :host {
@@ -65,33 +64,6 @@
                 vertical-align: middle;
                 margin-left: 1em;
             }
-        }
-    }
-
-    .timer-container {
-        padding: 0.5em 1em;
-        border-radius: 0.5em;
-        box-shadow: inset 0 0 10px 2px rgba(0, 0, 0, 0.25);
-
-        .label:first-child {
-            margin-right: 1em;
-            font-size: 1em;
-        }
-
-        .label {
-            margin-right: 0.75em;
-            margin-left: 0.25em;
-            font-size: 0.75em;
-        }
-
-        .time {
-            flex: 0 0 auto;
-            font-size: 2.5rem;
-            text-align: right;
-            min-width: 180px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            font-family: 'Inconsolata', monospace;
-            font-variant-numeric: tabular-nums;
         }
     }
 }

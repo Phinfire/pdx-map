@@ -2,6 +2,18 @@ import { ITableColumn } from "./ITableColumn";
 
 
 export class TableColumn<T> implements ITableColumn<T> {
+
+    public static getIndexColumn<T>(): TableColumn<T> {
+        return new TableColumn<T>(
+            'position',
+            '',
+            null,
+            false,
+            (element: T, index: number) => index + 1,
+            (element: T, index: number) => null
+        );
+    };
+
     public readonly visibleCellValue: (element: T, index: number) => any;
     public readonly isImage: boolean;
 

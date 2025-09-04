@@ -8,6 +8,8 @@
     justify-content: center;
     align-items: center;
     background-color: var(--void-color);
+    @include mat.button-overrides((filled-container-color: rgb(0, 180, 0),
+        ));
 }
 
 
@@ -23,10 +25,14 @@
 
 .top {
     width: 25%;
+    height: 10%;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 1em 1em;
+}
+
+.tool-bar {
+    margin: 1em 0em;
 }
 
 .discord-container {
@@ -37,4 +43,23 @@
     border: 1px solid var(--faded-border-color);
     background-color: var(--background-color);
     box-shadow: var(--box-shadow);
+}
+
+.center {
+    width: 90%;
+    height: 90%;
+    padding: 2em;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    .spacer {
+        width: 2em;
+    }
+
+    .table-container {
+        max-width: 50%;
+        max-height: 100%;
+        overflow: auto;
+    }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DiscordUser } from '../util/DiscordUser';
+import { DiscordUser } from '../model/social/DiscordUser';
 import { BaseHttpService } from './base-http.service';
 import { BehaviorSubject, interval, Observable } from 'rxjs';
 import { switchMap, catchError, startWith } from 'rxjs/operators';
