@@ -5,9 +5,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { CommonModule } from '@angular/common';
 import { MatDividerModule } from '@angular/material/divider';
-import { SaveViewSplashComponent } from '../save-view-splash/save-view-splash.component';
 import { SideNavContentProvider } from '../SideNavContentProvider';
-
+import { SaveViewSplashComponent } from '../save-view-splash/save-view-splash.component';
 
 @Component({
     selector: 'app-paradox',

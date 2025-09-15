@@ -3,8 +3,8 @@ import { CK3 } from "./CK3";
 
 export class Holding {
 
-    public static fromRawData(data: any, ck3: CK3): Holding {
-        return new Holding(data, ck3);
+    public static fromRawData(index: string, data: any, ck3: CK3): Holding {
+        return new Holding(index, data, ck3);
     }
 
     public static readonly TYPE_CASTLE = "castle_holding";
@@ -12,8 +12,12 @@ export class Holding {
     public static readonly TYPE_CITY = "city_holding";
     public static readonly TYPE_TRIBAL = "tribal_holding";
 
-    private constructor(private data: any, private ck3: CK3) {
-        
+    private constructor(private index: string, private data: any, private ck3: CK3) {
+
+    }
+
+    getIndex() {
+        return this.index;
     }
 
     getHoldingType() {

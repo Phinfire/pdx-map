@@ -6,7 +6,6 @@ import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { TableComponent } from '../../vic3-country-table/vic3-country-table.component';
 import { DiscordAuthenticationService } from '../../../services/discord-auth.service';
-import { MCSignupService } from '../../../services/MCSignupService';
 import { DiscordUser } from '../../../model/social/DiscordUser';
 import { SimpleTableColumn } from '../../../util/table/SimpleTableColumn';
 import { TableColumn } from '../../../util/table/TableColumn';
@@ -17,11 +16,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { calculateAssignments } from '../../../util/lobby';
 import { SignupAssetsService } from '../SignupAssetsService';
 import { StartAssignment } from '../StartAssignment';
-import { AssignmentService } from '../../../services/AssignmentService';
+import { AssignmentService } from '../AssignmentService';
 import { combineLatest } from 'rxjs';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
+import { MCSignupService } from '../MCSignupService';
 
 @Component({
     selector: 'app-mcadmin',
@@ -30,6 +30,55 @@ import { FormsModule } from '@angular/forms';
     styleUrl: './mcadmin.component.scss'
 })
 export class MCAdminComponent {
+
+    // For swapping assignments
+    protected swapUser1: string = '';
+    protected swapUser2: string = '';
+
+    /**
+     * Swaps the assignments of two users in the calculatedRegion2Player map.
+     * Shows a snackbar on success or error.
+     */
+    swapAssignments() {
+        if (!this.swapUser1 || !this.swapUser2 || this.swapUser1 === this.swapUser2) {
+            this.openSnackBar('Please select two different users to swap.', 'OK');
+            return;
+        }
+        // Find the regions assigned to each user
+        let region1: string | undefined = undefined;
+        let region2: string | undefined = undefined;
+        for (const [region, user] of this.calculatedRegion2Player.entries()) {
+            if (user.id === this.swapUser1) region1 = region;
+            if (user.id === this.swapUser2) region2 = region;
+        }
+        if (!region1 || !region2) {
+            this.openSnackBar('Both users must have an assigned region to swap.', 'OK');
+            return;
+        }
+        // Swap the users in the calculatedRegion2Player map
+        const user1 = this.loadedUsers.find(u => u.id === this.swapUser1);
+        const user2 = this.loadedUsers.find(u => u.id === this.swapUser2);
+        if (!user1 || !user2) {
+            this.openSnackBar('User not found.', 'OK');
+            return;
+        }
+        this.calculatedRegion2Player.set(region1, user2);
+        this.calculatedRegion2Player.set(region2, user1);
+        this.openSnackBar('Assignments swapped successfully!', 'OK');
+        // Optionally clear the selections
+        this.swapUser1 = '';
+        this.swapUser2 = '';
+        this.cdr.markForCheck();
+    }
+
+    redirectToAdmin() {
+        const currentUrl = window.location.pathname;
+        if (currentUrl.endsWith('/admin')) {
+            window.location.href = currentUrl.slice(0, -6);
+        } else {
+            console.warn("Current route " + currentUrl + " does not end with /admin, cannot go back");
+        }
+    }
 
     @ViewChild(MatSort) sort!: MatSort;
 
@@ -49,11 +98,12 @@ export class MCAdminComponent {
     protected serverRegion2Player: Map<string, DiscordUser> = new Map();
     protected selectedUserToRemove: string = '';
     protected selectedRegions: string[] = [];
+    protected selectedPlayers: DiscordUser[] = [];
 
     protected columns: TableColumn<DiscordUser>[] = [
         TableColumn.getIndexColumn<DiscordUser>(),
         new SimpleTableColumn<DiscordUser>('img', '', user => user.getAvatarImageUrl(), null, true),
-        new SimpleTableColumn<DiscordUser>('name', 'Name', user => user.global_name || user.username),
+        new SimpleTableColumn<DiscordUser>('name', 'Name', user => user.getName()),
         new SimpleTableColumn<DiscordUser>('pick1', 'I', user => this.getPick(user, 0)),
         new SimpleTableColumn<DiscordUser>('pick2', 'II', user => this.getPick(user, 1)),
         new SimpleTableColumn<DiscordUser>('pick3', 'III', user => this.getPick(user, 2)),
@@ -76,7 +126,7 @@ export class MCAdminComponent {
             const userPicks = this.loadedUserId2Picks.get(user.id);
             if (!userPicks) {
                 return '';
-            }
+            }   
             let assignedRegion = '';
             for (const [region, assignedUser] of this.calculatedRegion2Player) {
                 if (assignedUser.id === user.id) {
@@ -130,6 +180,9 @@ export class MCAdminComponent {
         this.mcSignupService.getAllRegisteredUser$().subscribe(users => {
             this.loadedUsers = users;
             this.tableData.data = users;
+            this.selectedPlayers = [...users];
+            this.swapUser1 = '';
+            this.swapUser2 = '';
             if (this.sort) {
                 this.tableData.sort = this.sort;
             }
@@ -137,7 +190,9 @@ export class MCAdminComponent {
         this.mcSignupService.allSignups$.subscribe(signups => {
             this.loadedUserId2Picks.clear();
             signups.forEach(signup => {
-                this.loadedUserId2Picks.set(signup.discord_id, signup.picks);
+                if (signup.user) {
+                    this.loadedUserId2Picks.set(signup.user.id, signup.picks);
+                }
             });
         });
         this.assetService.getRegionNameList$().subscribe(regions => {
@@ -145,15 +200,11 @@ export class MCAdminComponent {
             this.loadedRegions = [...this.loadedRegions];
             this.selectedRegions = [...regions];
         });
-        combineLatest([
-            this.mcSignupService.getAllRegisteredUser$(),
-            this.assignmentService.allAssignments$
-        ]).subscribe(([users, assignments]) => {
+        this.assignmentService.allAssignments$.subscribe((assignments) => {
             this.serverRegion2Player.clear();
             assignments.forEach(assignment => {
-                const user = users.find(u => u.id === assignment.discord_id);
-                if (user) {
-                    this.serverRegion2Player.set(assignment.region_key, user);
+                if (assignment.user) {
+                    this.serverRegion2Player.set(assignment.region_key, assignment.user);
                 }
             });
         });
@@ -164,6 +215,9 @@ export class MCAdminComponent {
     }
 
     getUsers(): DiscordUser[] {
+        if (this.selectedPlayers && this.selectedPlayers.length > 0 && this.selectedPlayers.length !== this.loadedUsers.length) {
+            return this.selectedPlayers;
+        }
         return this.loadedUsers;
     }
 
@@ -175,12 +229,25 @@ export class MCAdminComponent {
         return `${this.selectedRegions.length} of ${this.loadedRegions.length} regions selected`;
     }
 
+    getSelectedPlayerCount(): string {
+        return `${this.selectedPlayers.length || this.loadedUsers.length} of ${this.loadedUsers.length} players selected`;
+    }
+
     onRegionSelectionChange(): void {
+        this.calculatedRegion2Player.clear();
+    }
+
+    onPlayerSelectionChange(): void {
         this.calculatedRegion2Player.clear();
     }
 
     resetSelectedRegions(): void {
         this.selectedRegions = [...this.loadedRegions];
+        this.calculatedRegion2Player.clear();
+    }
+
+    resetSelectedPlayers(): void {
+    this.selectedPlayers = [...this.loadedUsers];
         this.calculatedRegion2Player.clear();
     }
 
@@ -200,13 +267,14 @@ export class MCAdminComponent {
     }
 
     assign() {
-        if (this.selectedRegions.length < this.loadedUsers.length) {
+        const users = this.getUsers();
+        if (this.selectedRegions.length < users.length) {
             this.openSnackBar("Not enough regions selected for the number of users!", "OK");
             return;
         }
         const calced = calculateAssignments(
             this.selectedRegions,
-            this.loadedUsers.map(user => {
+            users.map(user => {
                 return { user: user, picks: this.loadedUserId2Picks.get(user.id)! };
             })
         );
@@ -214,13 +282,13 @@ export class MCAdminComponent {
     }
 
     canConfirmAssignments(): boolean {
-        return this.calculatedRegion2Player.size === this.loadedUsers.length;
+        return this.calculatedRegion2Player.size === this.getUsers().length;
     }
 
     confirmAssignments() {
-        const player2region: Map<string, string> = new Map();
+        const player2region: Map<DiscordUser, string> = new Map();
         this.calculatedRegion2Player.forEach((user, region) => {
-            player2region.set(user.id, region);
+            player2region.set(user, region);
         });
         this.assignmentService.setAllPlayerRegionAssignments$(player2region).subscribe({
             next: (success) => {
@@ -266,5 +334,15 @@ export class MCAdminComponent {
                 console.error('Remove signup error:', err);
             }
         });
+    }
+
+    compareUsers(u1: DiscordUser, u2: DiscordUser): boolean {
+        return u1 && u2 && u1.id === u2.id;
+    }
+    
+    pullServerToLocal() {
+        this.calculatedRegion2Player = new Map(this.serverRegion2Player);
+        this.openSnackBar('Server assignments loaded into local assignments.', 'OK');
+        this.cdr.markForCheck();
     }
 }

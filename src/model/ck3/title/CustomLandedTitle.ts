@@ -6,8 +6,10 @@ import { AbstractLandedTitle } from "./AbstractLandedTitle";
 
 export class CustomLandedTitle extends AbstractLandedTitle {
 
-    constructor(key: string, holder: string, deFactoLiege: string | null, private color: RGB, private tier: RulerTier, private vassalTitleIndices: number[], private name: string, save: ICk3Save, ck3: CK3) {
-        super(key, holder, deFactoLiege, save, ck3);
+    private cachedRulerTier: RulerTier | null = null;
+
+    constructor(key: string, holder: string, deFactoLiege: string | null, private color: RGB, private tier: RulerTier, private vassalTitleIndices: number[], private name: string, capitalHoldingIndex: number | null, save: ICk3Save, ck3: CK3) {
+        super(key, holder, deFactoLiege, capitalHoldingIndex, save, ck3);
         if (!this.name) {
             throw new Error("Custom landed title must have a name");
         }
@@ -17,7 +19,7 @@ export class CustomLandedTitle extends AbstractLandedTitle {
         return this.color;
     }
 
-    public override getLocalisedName(): String {
+    public override getLocalisedName() {
         return this.name;
     }
 
@@ -25,7 +27,18 @@ export class CustomLandedTitle extends AbstractLandedTitle {
         if (this.tier != RulerTier.NONE) {
             return this.tier;
         } else {
-            return this.vassalTitleIndices.map((vassal: number) => this.save.getTitleByIndex(vassal).getTier()).reduce((prev: RulerTier, current: RulerTier) => prev.compare(current) > 0 ? prev : current, RulerTier.NONE).getNextHigherTier();
+            if (this.cachedRulerTier == null) {
+                this.cachedRulerTier = this.vassalTitleIndices
+                    .map((vassal: number) => {
+                        const vassalTitle = this.save.getTitleByIndex(vassal);
+                        if (vassalTitle) {
+                            return vassalTitle.getTier();
+                        }
+                        return RulerTier.NONE;
+                    })
+                    .reduce((prev: RulerTier, current: RulerTier) => prev.compare(current) > 0 ? prev : current, RulerTier.NONE).getNextHigherTier();
+            }
+            return this.cachedRulerTier;
         }
     }
 }

@@ -48,6 +48,17 @@ export class RulerTier {
         return this.name;
     }
 
+    getStateTitle(): string {
+        switch (this) {
+            case RulerTier.BARON: return "Barony";
+            case RulerTier.COUNT: return "County";
+            case RulerTier.DUKE: return "Duchy";
+            case RulerTier.KING: return "Kingdom";
+            case RulerTier.EMPEROR: return "Empire";
+            default: return "-";
+        }
+    }
+
     getImageUrl(): string {
         if (this.index == 0) {
             return CK3.CK3_DATA_URL + "/gfx/interface/icons/message_feed/adventurer.webp";

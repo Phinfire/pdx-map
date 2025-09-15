@@ -10,6 +10,10 @@ export class RGB {
         return (this.r << 16) | (this.g << 8) | this.b;
     }
 
+    toHexString(): string {
+        return `#${this.toNumber().toString(16).padStart(6, '0')}`;
+    }
+
     public static fromHSV(h: number, s: number, v: number): RGB {
         const c = v * s;
         const x = c * (1 - Math.abs((h / 60) % 2 - 1));

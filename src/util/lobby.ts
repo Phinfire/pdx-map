@@ -13,7 +13,7 @@ export function calculateAssignments<U, T>(
         return choices.map((choice) => {
             const idx = s.picks.indexOf(choice as T);
             if (idx === -1) return 0;
-            return s.picks.length - idx;
+            return 10 + 2 * (s.picks.length - idx);
         });
     });
     const maxUtility = Math.max(...utilityMatrix.flat());

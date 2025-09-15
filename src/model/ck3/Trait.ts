@@ -65,4 +65,8 @@ export class Trait {
         }
         return 0;
     }
+
+    public getRulerDesignerCost() {
+        return Number.parseInt(this.data.ruler_designer_cost) ?? 0;
+    }
 }

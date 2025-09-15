@@ -7,6 +7,17 @@ import JSZip from 'jszip';
 })
 export class PdxFileService {
 
+    /**
+     * Parses a string using Jomini and returns a Promise of the resulting JSON.
+     * @param content The string content to parse.
+     */
+    public parseContentToJsonPromise(content: string): Promise<any> {
+        return Jomini.initialize().then(parser => {
+            const parsedData = parser.parseText(content, {}, (q) => q.json());
+            return JSON.parse(parsedData);
+        });
+    }
+
     importFile(files: File[], callback: (name: string, json: any) => void, errorCallback?: (error: any, message: string) => void) {
         const handleFileRead = async (file: File, content: string) => {
             try {
@@ -58,7 +69,6 @@ export class PdxFileService {
                 const handleFileRead = async (content: string) => {
                     try {
                         const parser = await Jomini.initialize();
-                        console.log("Jomini initialized for file:", file.name);
                         const parsedData = parser.parseText(content, {}, (q) => q.json());
                         const json = JSON.parse(parsedData);
                         resolve({ name: file.name, json });
@@ -117,6 +127,7 @@ export class PdxFileService {
 
     
     public downloadJson(json: any, filename: string) {
+        console.log("Downloading JSON", json, filename);
         const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

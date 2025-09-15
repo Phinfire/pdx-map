@@ -1,4 +1,5 @@
 import { CK3 } from "./CK3";
+import { Holding } from "./Holding";
 import { LegacyCk3Save } from "./LegacyCk3Save";
 import { ICk3Save } from "./save/ICk3Save";
 
@@ -49,9 +50,17 @@ export class County {
     }
 
     getHoldings() {
-        const baronies = this.ck3.getCountyBaronies(this.key)!;
-        const provinceIndices = baronies.map((barony: string) => this.ck3.getBaronyProvinceIndex(barony)!);
-        return provinceIndices.map((index: number) => this.save.getHolding(index)).filter((holding: any) => holding != null);
+        const baronyKeys = this.ck3.getCountyBaronies(this.key)!;
+        const pairs: Array<[string, Holding]> = [];
+        for (const barony of baronyKeys) {
+            const provinceIndex = this.ck3.getBaronyProvinceIndex(barony);
+            if (provinceIndex == null) continue;
+            const holding = this.save.getHolding(provinceIndex + "");
+            if (holding != null) {
+                pairs.push([barony, holding]);
+            }
+        }
+        return pairs;
     }
 
     getTitle() {

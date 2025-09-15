@@ -159,12 +159,13 @@ export class CK3Service {
 
     openCk3SaveFromFile(fileURL: string): Observable<Ck3Save> {
         return this.initializeCK3().pipe(
-            switchMap(ck3 => 
+            switchMap(ck3 =>
                 from(fetch(fileURL)).pipe(
                     switchMap(response => from(response.blob())),
                     map(blob => new File([blob], "save.ck3")),
-                    switchMap(file => from(this.paradoxFileService.importFilePromise(file))),
+                    switchMap(file => from(this.importFilePromise(file, true))),
                     map(result => {
+                        //this.paradoxFileService.downloadJson(result.json, "ck3_opt" + ".json");
                         return Ck3Save.fromRawData(result.json, ck3);
                     })
                 )
@@ -177,7 +178,7 @@ export class CK3Service {
     }
 
     openCk3ZeroSaveFromFile(): Observable<Ck3Save> {
-        return this.openCk3SaveFromFile("https://codingafterdark.de/pdx/ZERO_WILLIAM.ck3").pipe(
+        return this.openCk3SaveFromFile("https://codingafterdark.de/pdx/mega/ZERO_WILLIAM.ck3").pipe(
             shareReplay(1)
         );
     }
@@ -212,8 +213,16 @@ export class CK3Service {
     }
 
     parseCustomCharacter(parsedJson: any, ck3: CK3): CustomRulerFile | null {
-        if (!parsedJson || !parsedJson.ruler || !parsedJson.ruler.config) {
-            console.warn("Invalid custom character JSON structure:", parsedJson);
+        if (!(parsedJson && typeof parsedJson === 'object')) {
+            console.warn("No valid JSON data provided for custom character", parsedJson);
+            return null;
+        }
+        if (typeof parsedJson.ruler !== 'object') {
+            console.warn("Missing ruler data in custom character JSON", parsedJson);
+            return null;
+        }
+        if (!parsedJson.ruler.config || typeof parsedJson.ruler.config !== 'object') {
+            console.warn("Missing config data in custom character JSON", parsedJson);
             return null;
         }
         const config = parsedJson.ruler.config;
@@ -241,20 +250,73 @@ export class CK3Service {
             const trait = ck3.getTraitByName(name);
             if (trait) {
                 return trait;
-            } 
+            }
             console.warn(`Trait not found: ${name}`);
             return null;
         }).filter((t): t is Trait => t !== null);
         const educationTrait = education ? ck3.getTraitByName(education) : null;
-        console.log("character", parsedJson.ruler);
-        console.log("name", parsedJson.ruler.name);
+        const skills: number[] = Array.from({ length: 8 }, (_, i) => config.skills?.[i] ?? 0);
         return new CustomRulerFile(
             config.name,
             age,
             culture,
             faith,
+            skills,
             traits.filter(t => !t.getName().startsWith('education_')),
             educationTrait
         );
+    }
+
+    public importFilePromise(file: File, optimize: boolean): Promise<{ name: string, json: any }> {
+        return new Promise((resolve, reject) => {
+            if (!file.name.endsWith('.ck3')) {
+                reject({ error: 'Only .ck3 files are supported by this method.', message: `File ${file.name} is not a .ck3 file.` });
+                return;
+            }
+            const zip = new JSZip();
+            zip.loadAsync(file)
+                .then(zip => zip.file('gamestate')?.async('uint8array'))
+                .then((gamestateData: Uint8Array | undefined) => {
+                    if (!gamestateData) {
+                        throw new Error('No gamestate found in .ck3 file');
+                    }
+                    const decoder = new TextDecoder('utf-8');
+                    const decodedData = decoder.decode(gamestateData);
+                    return Jomini.initialize().then(parser => {
+                        if (optimize) {
+                            const result = parser.parseText(decodedData, {}, (q: any) => ({
+                                provinces: q.at('/provinces') ?? null,
+                                county_manager: q.at('/county_manager') ?? null,
+                                date: q.at('/date'),
+                                dynasties: q.at('/dynasties') ?? null,
+                                meta_data: q.at('/meta_data') ?? null,
+                                living: q.at('/living') ?? null,
+                                dead_unprunable: q.at('/dead_unprunable') ?? null,
+                                dead_prunable: q.at('/dead_prunable') ?? null,
+                                played_character: q.at('/played_character') ?? null,
+                                religion: { faiths: q.at('/religion/faiths') ?? null },
+                                culture_manager: { cultures: q.at('/culture_manager/cultures') ?? null },
+                                landed_titles: { landed_titles: q.at('/landed_titles/landed_titles') ?? null }
+                            }));
+                            resolve({ name: file.name, json: result });
+                        } else {
+                            const out = parser.parseText(decodedData, {}, (q: any) => q.json());
+                            try {
+                                console.debug('Jomini parseText output:', out);
+                                const json = JSON.parse(out);
+                                resolve({ name: file.name, json });
+                            } catch (e) {
+                                console.error('Failed to parse Jomini output as JSON:', out, e);
+                                reject({ error: e, message: `Error parsing .ck3 file: ${file.name}` });
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    const message = `Error parsing .ck3 file: ${file.name}`;
+                    console.error(message, error);
+                    reject({ error, message });
+                });
+        });
     }
 }

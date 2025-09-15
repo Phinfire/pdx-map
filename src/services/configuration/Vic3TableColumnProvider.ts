@@ -1,6 +1,5 @@
 import { Injectable } from "@angular/core";
 import { TableColumn } from "../../util/table/TableColumn";
-import { BuildingAggregatingTableColumn } from "../../util/table/BuildingAggregatingTableColumn";
 import { SimpleTableColumn } from "../../util/table/SimpleTableColumn";
 import { HttpClient } from "@angular/common/http";
 import { GoodsViewMode } from "./GoodViewMode";
@@ -13,11 +12,19 @@ import { Ownership } from "../../model/vic/Ownership";
 import { Pop } from "../../model/vic/Pop";
 import { PowerBloc } from "../../model/vic/PowerBloc";
 import { Vic3GameFiles } from "../../model/vic/Vic3GameFiles";
+import { AggregatingTableColumn } from "../../util/table/AggregatingTableColumn";
+import { Building } from "../../model/vic/Building";
+
+class BuildingAggregatingTableColumn extends AggregatingTableColumn<Country, Building> {
+
+    constructor(def: string, header: string, tooltip: string, sortable: boolean, predicate: (building: Building) => boolean, valueExtractor: (building: Building) => number, predicateForNormalization: ((building: Building) => boolean) | null = null) {
+        super(def, header, tooltip, sortable, predicate, valueExtractor, (building: Building) => building.getName(), predicateForNormalization);
+    }
+}
 
 @Injectable({
     providedIn: 'root'
 })
-
 export class Vic3TableColumnProvider {
 
     baseColumns: TableColumn<Country>[] = [

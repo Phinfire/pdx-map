@@ -1,12 +1,11 @@
-import { Injectable } from '@angular/core';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { RendererConfigProvider } from '../../app/viewers/polygon-select/RendererConfigProvider';
+import { ColorConfigProvider } from '../../app/viewers/polygon-select/ColorConfigProvider';
 
-export function makeGeoJsonPolygons(geojson: any, configProvider: RendererConfigProvider, useSpecialTexture: (key: string) => THREE.CanvasTexture | null, forceNonInteractive: (key: string) => boolean) {
+export function makeGeoJsonPolygons(geojson: any, configProvider: ColorConfigProvider, useSpecialTexture: (key: string) => THREE.CanvasTexture | null, forceNonInteractive: (key: string) => boolean, thickness: number) {
     const meshes: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string })[] = [];
-    const thickness = 1.5;
     const mapScale = 400.0;
+    let totalTriangles = 0;
     if (!geojson || !geojson.features) return meshes;
     const allCoords = loadCoordinates(geojson);
     const boundingBox = calculateBoundingBox(allCoords);
@@ -29,14 +28,18 @@ export function makeGeoJsonPolygons(geojson: any, configProvider: RendererConfig
         }
         try {
             if (type === 'Polygon') {
-                const geometry = createGeometryFromCoords(coords, centerFn, thickness);
+                const geometry = thickness === 0
+                    ? createFlatGeometryFromCoords(coords, centerFn)
+                    : createGeometryFromCoords(coords, centerFn, thickness);
                 if (geometry) {
                     key2Geos.get(key)!.push(geometry);
                 }
             } else if (type === 'MultiPolygon') {
                 coords.forEach((polyCoords: any, polyIndex: number) => {
                     try {
-                        const geometry = createGeometryFromCoords(polyCoords, centerFn, thickness);
+                        const geometry = thickness === 0
+                            ? createFlatGeometryFromCoords(polyCoords, centerFn)
+                            : createGeometryFromCoords(polyCoords, centerFn, thickness);
                         if (geometry) {
                             key2Geos.get(key)!.push(geometry);
                         }
@@ -50,6 +53,43 @@ export function makeGeoJsonPolygons(geojson: any, configProvider: RendererConfig
         } catch (err) {
             console.warn(`Skipping invalid feature ${featureName}:`, err);
         }
+// Create flat geometry (no extrusion) from coordinates
+function createFlatGeometryFromCoords(coords: any, normFn: (x: number, y: number) => [number, number]): THREE.BufferGeometry | null {
+    if (!coords || !coords.length) {
+        console.warn('Invalid coordinates provided for flat geometry creation:', coords);
+        return null;
+    }
+    if (!coords[0] || !Array.isArray(coords[0]) || coords[0].length < 3) {
+        console.info('Invalid outer ring coordinates: must have at least 3 points. Got:', coords[0]);
+        return null;
+    }
+    const shape = new THREE.Shape();
+    const outerRing = coords[0];
+    let validPointsAdded = 0;
+    outerRing.forEach(([x, y]: [number, number], i: number) => {
+        if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) {
+            console.warn(`Invalid coordinate at index ${i}:`, [x, y]);
+            return;
+        }
+        const [nx, ny] = normFn(x, y);
+        if (isNaN(nx) || isNaN(ny)) {
+            console.warn(`Transform resulted in NaN at index ${i}:`, [x, y], '->', [nx, ny]);
+            return;
+        }
+        if (validPointsAdded === 0) {
+            shape.moveTo(nx, ny);
+        } else {
+            shape.lineTo(nx, ny);
+        }
+        validPointsAdded++;
+    });
+    if (validPointsAdded < 3) {
+        console.warn(`Insufficient valid points for flat geometry creation. Need at least 3, got ${validPointsAdded}`);
+        return null;
+    }
+    shape.closePath();
+    return new THREE.ShapeGeometry(shape);
+}
     });
     const nonInteractiveGeos = [];
     for (const [key, geos] of key2Geos) {
@@ -63,6 +103,7 @@ export function makeGeoJsonPolygons(geojson: any, configProvider: RendererConfig
         const color = configProvider.getColor(key, interactive, false, false);
         if (interactive) {
             const mesh = meshFromGeometry(mergedGeo, color, interactive, key, useSpecialTexture);
+            totalTriangles += getTriangleCount(mergedGeo);
             meshes.push(mesh);
         } else {
             nonInteractiveGeos.push(mergedGeo);
@@ -71,9 +112,13 @@ export function makeGeoJsonPolygons(geojson: any, configProvider: RendererConfig
 
     if (nonInteractiveGeos.length > 0) {
         const inactiveColor = configProvider.getColor("", false, false, false);
-        const nonInteractiveMesh = meshFromGeometry(mergeGeometries(nonInteractiveGeos), inactiveColor, false, "", useSpecialTexture);
+        const mergedNonInteractiveGeo = mergeGeometries(nonInteractiveGeos);
+        totalTriangles += getTriangleCount(mergedNonInteractiveGeo);
+        const nonInteractiveMesh = meshFromGeometry(mergedNonInteractiveGeo, inactiveColor, false, "", useSpecialTexture);
         meshes.push(nonInteractiveMesh);
     }
+    
+    console.log(`makeGeoJsonPolygons created ${totalTriangles.toLocaleString()} triangles across ${meshes.length.toLocaleString()} meshes`);
     return meshes;
 }
 
@@ -126,6 +171,16 @@ export function makeDotTexture(dotFrequency: number = 1.0) {
     }, dotFrequency);
 }
 
+function getTriangleCount(geometry: THREE.BufferGeometry): number {
+    const index = geometry.index;
+    if (index) {
+        return index.count / 3;
+    } else {
+        const positionAttribute = geometry.attributes['position'] as THREE.BufferAttribute;
+        return positionAttribute ? positionAttribute.count / 3 : 0;
+    }
+}
+
 function meshFromGeometry(geometry: THREE.BufferGeometry, color: number, interactive: boolean, key: string, useSpecialTexture: (key: string) => THREE.CanvasTexture | null) {
     let material: THREE.MeshPhongMaterial;
     const specialTexture  = useSpecialTexture(key);
@@ -133,7 +188,8 @@ function meshFromGeometry(geometry: THREE.BufferGeometry, color: number, interac
         material = new THREE.MeshPhongMaterial({
             color: color,
             map: specialTexture,
-            flatShading: true
+            flatShading: true,
+            side: THREE.FrontSide
         });
     } else {
         material = new THREE.MeshPhongMaterial({ color: color, flatShading: true });

@@ -1,4 +1,6 @@
-export class ModelElementList<T> {
+import { HasAggregation as SupportsAggregration } from "../../util/table/HasAggregation";
+
+export class ModelElementList<T> implements SupportsAggregration<T> {
 
     private cachedTotals: Map<string, number> = new Map();
 

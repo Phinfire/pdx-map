@@ -15,6 +15,21 @@ export class Ck3Player {
         return this.currentCharacter;
     }
 
+    getLastPlayedCharacter(): Character | null {
+        if (this.getCurrentCharacter()) {
+            return this.getCurrentCharacter();
+        }
+        const sortedDates = Array.from(this.previousCharacters.keys()).sort((a, b) => {
+            const dateA = new Date(a).getTime();
+            const dateB = new Date(b).getTime();
+            return dateB - dateA;
+        });
+        if (sortedDates.length > 0) {
+            return this.previousCharacters.get(sortedDates[0]) || null;
+        }
+        return null;
+    }
+
     getPreviousCharacters() {
         return this.previousCharacters;
     }

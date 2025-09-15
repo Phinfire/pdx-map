@@ -12,18 +12,41 @@ export class Character {
         return new Character(id, data, save, ck3);
     }
 
+    private traits: Trait[] = [];
+    private female: boolean;
+    private landed: boolean
+    private birthDate: Date;
+    private deathDate: Date | null;
+
+    children: Character[] = [];
+
+    cachedHeldTitles: AbstractLandedTitle[] | null = null;
+
     constructor(private id: string, private data: any, private save: ICk3Save, private ck3: CK3) {
+        this.traits = (this.data.traits || []).map((traitIndex: any) => this.ck3.getTraitByIndex(traitIndex));
+        this.female = data.female ? true : false;
+        this.landed = data.landed_data != null;
+        this.children = this.getChildren();
+        if (this.data.family_data && this.data.family_data.child) {
+            this.children =  this.data.family_data.child
+                .map((child: any) => this.save.getCharacter(child))
+                .filter((child: any) => child != null).sort((a: any, b: any) => a.getBirthDate().getTime() - b.getBirthDate().getTime());
+        } else {
+            this.children = [];
+        }
+        if (!this.data.birth) {
+            throw new Error("Character " + this.getCharacterId() + " has no birth date set");
+        }
+        this.birthDate = this.data.birth;
+        this.deathDate = this.data.dead_data ? this.data.dead_data.date : null;
     }
 
     public getDynastyHouse() {
-        return this.save.getDynastyHouseAndDynastyData(this.data.dynasty_house);
+        return this.save.getDynastyHouse(this.data.dynasty_house);
     }
 
     public isFemale() {
-        if (this.data.female) {
-            return true;
-        }
-        return false;
+        return this.female;
     }
 
     public getCharacterId() {
@@ -31,16 +54,15 @@ export class Character {
     }
 
     public isAlive(): boolean {
-        return this.data.alive_data != null;
+        return this.deathDate == null;
     }
 
     public isLanded(): boolean {
-        return this.data.landed_data != null;
+        return this.landed;
     }
 
-    public getBirth() {
-        const parts =  this.data.birth.split(".");
-        return new Date(parts[0], parts[1] - 1, parts[2]);
+    public getBirthDate() {
+        return this.birthDate;
     }
 
     public getName() {
@@ -62,11 +84,12 @@ export class Character {
         if (this.data.culture) {
             return this.save.getCulture(this.data.culture);
         }
-        throw new Error("Character " + this.getCharacterId() + " has no culture set");
+        //throw new Error("Character " + this.getCharacterId() + " has no culture set");
+        return null;
     }
 
     public getCash() {
-        return this.getAliveValue("gold", 0);
+        return this.getAliveValue("gold", {value: 0}).value;
     }
 
     public getIncome() {
@@ -78,14 +101,11 @@ export class Character {
     }
 
     public getTraits() : Trait[] {
-        return (this.data.traits || []).map((traitIndex: any) => this.ck3.getTraitByIndex(traitIndex));
+        return this.traits;;
     }
 
     public getChildren() {
-        if (this.data.family_data && this.data.family_data.child) {
-            return this.data.family_data.child.map((child: any) => this.save.getCharacter(child)).filter((child: any) => child != null).sort((a: any, b: any) => a.getBirth().getTime() - b.getBirth().getTime());
-        }
-        return [];
+        return this.children;
     }
 
     public getSkills() {
@@ -175,7 +195,10 @@ export class Character {
     }
 
     public getTitles() {
-        return this.save.getHeldTitles(this);
+        if (this.cachedHeldTitles == null) {
+            this.cachedHeldTitles = this.save.getHeldTitles(this);
+        }
+        return this.cachedHeldTitles;
     }
 
     public getPrimaryTitle() {
@@ -210,12 +233,24 @@ export class Character {
     }
 
     public getAge() {
-        const currentDate = new Date(this.save.getCurrentDate());
-        const birthDate = this.getBirth();
+        if (!this.isAlive()) {
+            return this.getAgeAtDeath();
+        }
+        const currentDate = new Date(this.save.getCurrentIngameDate());
+        const birthDate = this.getBirthDate();
         if (currentDate.getMonth() < birthDate.getMonth() || (currentDate.getMonth() == birthDate.getMonth() && currentDate.getDate() < birthDate.getDate())) {
             return currentDate.getFullYear() - birthDate.getFullYear() - 1;
         }
         return currentDate.getFullYear() - birthDate.getFullYear();
+    }
+
+    public getAgeAtDeath() {
+        if (this.isAlive()) {
+            throw new Error("Character " + this.getCharacterId() + " is still alive");
+        }
+        const deathDate = this.deathDate!;
+        const birthDate = this.getBirthDate();
+        return deathDate.getFullYear() - birthDate.getFullYear();
     }
 
     public getVassals() { //TODO

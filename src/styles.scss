@@ -1,6 +1,27 @@
+@use '@angular/material' as mat;
 @import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+
+:root {
+    --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --box-shadow-small: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --box-shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --box-shadow-extra-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    @include mat.dialog-overrides((container-max-width: none,
+            container-min-width: 0px,
+            container-small-max-width: none));
+    @include mat.tabs-overrides((divider-color: var(--text-color),
+            active-label-text-color: var(--text-color),
+            inactive-label-text-color: var(--text-color),
+            label-text-size: 2em,
+            label-text-font: var(--font-family),
+            container-height: 2em,
+            divider-height: 1px,
+            active-indicator-height: 0.2em,
+        ));
+}
+
 h2 {
     font-size: 2em;
 }
@@ -15,8 +36,12 @@ body {
     user-select: none;
     display: flex;
     flex-direction: column;
+    --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --box-shadow-small: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --box-shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --box-shadow-extra-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
-
+/*
 .tooltip {
     background: var(--lighter-background-color) !important;
     color: #fff !important;
@@ -25,10 +50,8 @@ body {
     padding: 0.5em 1em !important;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
 }
-
+*/
 .tooltip-secret {
-    background: var(--background-color) !important;
-    color: var(--text-color) !important;
     border-radius: 6px !important;
     padding: 0.5em 0.5em 0.5em 0em !important;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;

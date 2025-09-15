@@ -7,7 +7,8 @@ export class SimpleTableColumn<T> extends TableColumn<T> {
         header: string,
         cellValue: (element: T, index: number) => any,
         subscript: ((element: T) => string) | null = null,
-        isImage: boolean = false
+        isImage: boolean = false,
+        headerImage?: string
     ) {
         super(
             def,
@@ -17,7 +18,8 @@ export class SimpleTableColumn<T> extends TableColumn<T> {
             cellValue,
             (element: T, index: number) => null,
             subscript,
-            isImage
+            isImage,
+            headerImage
         );
     }
 }

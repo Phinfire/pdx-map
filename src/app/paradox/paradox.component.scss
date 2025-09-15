@@ -7,7 +7,6 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: var(--void-color);
     @include mat.toolbar-overrides((container-background-color: var(--background-color),
             container-text-color: var(--text-color),
             title-text-size: 2em,
@@ -26,6 +25,21 @@ span {
     flex: 1;
     display: flex;
     flex-direction: column;
+}
+
+.container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="200" fill="%23009736"/><rect x="100" y="0" width="100" height="200" fill="%23FFFFFF"/><rect x="200" y="0" width="100" height="200" fill="%23000000"/><polygon points="0,0 300,0 150,100" fill="%23EE2A35"/></svg>');
+  background-size: cover;
+  filter: brightness(0.4);
+  pointer-events: none;
 }
 
 .sidenav {

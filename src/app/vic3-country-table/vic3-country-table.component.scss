@@ -7,8 +7,11 @@
     box-sizing: border-box;
     align-items: center;
     justify-content: flex-start;
-    //padding: 3em 5em;
     max-height: 100%;
+    max-width: 100%;
+    border-radius: 0.5em;
+    border: 4px solid var(--faded-border-color);
+    font-family: var(--header-font-family);
     @include mat.table-overrides((row-item-container-height: 3em,
             row-item-label-text-size: 1em,
             header-container-height: 2.2em,
@@ -17,14 +20,19 @@
             row-item-label-text-color: var(--text-color),
             row-item-outline-width: 1px,
             header-headline-color: var(--text-color),
-            header-headline-font: var(--font-family) var(--font-weight-bold),
-            row-item-label-text-font: var(--font-family) var(--font-weight-regular)
-        ));
+            header-headline-font: var(--header-font-family),
+            row-item-label-text-font: var(--font-family)));
 }
 
 table {
-    border: 1px solid var(--faded-border-color);
+    border: none;
     border-radius: 0.5em;
+    height: 100%;
+    width: 100%;
+    max-height: 100%;
+    max-width: 100%;
+    overflow: auto;
+    box-sizing: border-box;
 }
 
 table th {
@@ -32,13 +40,28 @@ table th {
     position: sticky;
     top: 0;
     background-color: var(--background-color);
-    border-top-left-radius: 0.5em;
-    border-top-right-radius: 0.5em;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    z-index: 2;
 }
 
 table td {
     background-color: var(--background-color);
     padding: 0.5em;
+    border-bottom: 1px solid var(--faded-border-color);
+    transition: background 0.2s;
+}
+
+table tr:nth-child(even) td {
+    background-color: var(--table-row-alt);
+}
+
+table tr:hover td {
+    background-color: var(--table-row-hover);
+}
+
+table tr:nth-child(even):hover td {
+    background-color: var(--table-row-alt-hover);
 }
 
 table td img {
@@ -51,11 +74,22 @@ table td:not(:has(img)) {
     padding: 0.5em;
 }
 
+// Only round the bottom corners of the last visible row
 table tr:last-child td:first-child {
     border-bottom-left-radius: 0.5em;
 }
+
 table tr:last-child td:last-child {
     border-bottom-right-radius: 0.5em;
+}
+
+// Only round the top corners of the first visible row
+table tr:first-child td:first-child {
+    border-top-left-radius: 0.5em;
+}
+
+table tr:first-child td:last-child {
+    border-top-right-radius: 0.5em;
 }
 
 .negative-cell {

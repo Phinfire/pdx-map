@@ -8,6 +8,7 @@ import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem, CdkMenuModule } from '@ang
 import { MatDialog } from '@angular/material/dialog';
 import { PlotViewComponent } from '../plot-view/plot-view.component';
 import { TableColumn } from '../../util/table/TableColumn';
+import { Plotable } from '../plot-view/plot/Plotable';
 
 export const myCustomTooltipDefaults: MatTooltipDefaultOptions = {
     showDelay: 0,
@@ -68,11 +69,15 @@ export class TableComponent<T> {
                 const value = this.selectedColumn!.cellValue(row, 0);
                 const label = hackyNameColumn!.cellValue(row, 0);
                 const color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-                return { value, label, color };
-            });
+                return new Plotable(label, value, color);
+            }).filter(p => p.value != null && p.value !== 0);
+            const width = 1400;
+            const height = 800;
             this.dialog.open(PlotViewComponent, {
-                data: {plotables: Array.from(plotables)},
-                panelClass: "popup"
+                data: {plotables: Array.from(plotables), plotType: 'bar'},
+                panelClass: "popup",
+                width: width + 'px',
+                height: height + 'px'
             });
         }
     }

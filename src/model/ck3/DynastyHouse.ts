@@ -5,6 +5,8 @@ import { ICk3Save } from "./save/ICk3Save";
 
 export class DynastyHouse {
 
+    private cachedHouseMembers: Character[] | null = null;
+
     constructor(private id: number, private data: any, private save: ICk3Save) {
 
     }
@@ -14,9 +16,12 @@ export class DynastyHouse {
     }
 
     public getHouseMembers() {
-        return this.save.getLivingCharactersFiltered((character: any) => {
-            return character.dynasty_house == this.id;   
-        });
+        if (this.cachedHouseMembers === null) {
+            this.cachedHouseMembers = this.save.getLivingCharactersFiltered((character: any) => {
+                return character.dynasty_house == this.id;   
+            });
+        }
+        return this.cachedHouseMembers;
     }
 
 

@@ -1,20 +1,20 @@
 import { Component, Input, SimpleChanges } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MatTabsModule } from '@angular/material/tabs';
-import { TableComponent } from '../vic3-country-table/vic3-country-table.component';
 import { CommonModule } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { FormsModule } from '@angular/forms';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { PlotViewComponent } from '../plot-view/plot-view.component';
-import { PersistenceService } from '../../services/PersistanceService';
-import { GoodsViewMode } from '../../services/configuration/GoodViewMode';
-import { Vic3TableColumnProvider } from '../../services/configuration/Vic3TableColumnProvider';
 import { Country } from '../../model/vic/Country';
+import { GoodCategory } from '../../model/vic/enum/GoodCategory';
 import { Vic3GameFiles } from '../../model/vic/Vic3GameFiles';
 import { Vic3Save } from '../../model/vic/Vic3Save';
-import { GoodCategory } from '../../model/vic/enum/GoodCategory';
+import { GoodsViewMode } from '../../services/configuration/GoodViewMode';
+import { Vic3TableColumnProvider } from '../../services/configuration/Vic3TableColumnProvider';
+import { PersistenceService } from '../../services/PersistanceService';
+import { PlotViewComponent } from '../plot-view/plot-view.component';
+import { TableComponent } from '../vic3-country-table/vic3-country-table.component';
 
 @Component({
     selector: 'app-save-view',

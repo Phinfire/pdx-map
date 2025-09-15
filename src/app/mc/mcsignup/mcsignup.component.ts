@@ -1,3 +1,4 @@
+import { Router } from '@angular/router';
 import { Component, inject, ViewChild, OnInit, HostListener, AfterViewInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,13 +13,13 @@ import { DiscordFieldComponent } from '../../discord-field/discord-field.compone
 import { DiscordLoginComponent } from '../../discord-login/discord-login.component';
 import { combineLatest } from 'rxjs';
 import { DiscordAuthenticationService } from '../../../services/discord-auth.service';
-import { MCSignupService } from '../../../services/MCSignupService';
-import { DynamicColorConfig } from '../../viewers/polygon-select/DynamicColorConfig';
+import { ValueGradientColorConfig } from '../../viewers/polygon-select/DynamicColorConfig';
 import { PolygonSelectComponent } from '../../viewers/polygon-select/polygon-select.component';
-import { RendererConfigProvider } from '../../viewers/polygon-select/RendererConfigProvider';
+import { ColorConfigProvider } from '../../viewers/polygon-select/ColorConfigProvider';
 import { TimerComponent } from '../../timer/timer.component';
 import { MegaCampaign } from '../MegaCampaign';
 import { MegaService } from '../MegaService';
+import { MCSignupService } from '../MCSignupService';
 
 export interface TableItem {
     key: string;
@@ -35,7 +36,7 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
 
     @ViewChild(PolygonSelectComponent) polygonSelectComponent!: PolygonSelectComponent;
 
-    @Input() campaign!: MegaCampaign;
+    @Input() campaign?: MegaCampaign;
 
     private readonly MAX_SELECTIONS = 5;
     private _snackBar = inject(MatSnackBar);
@@ -90,18 +91,30 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
         return tooltip;
     }
 
-    colorConfigProviders: RendererConfigProvider[] = [new RendererConfigProvider(new Map<string, number>())]
+    colorConfigProviders: ColorConfigProvider[] = [new ColorConfigProvider(new Map<string, number>())]
 
     constructor(
         protected discordAuthService: DiscordAuthenticationService,
         private signupAssetsService: SignupAssetsService,
-        private mcSignupService: MCSignupService
+        private mcSignupService: MCSignupService,
+        private router: Router
     ) { }
 
+    goBack() {
+        // Remove '/signup' from the end of the current URL and navigate
+        const url = this.router.url.replace(/\/signup$/, '');
+        this.router.navigateByUrl(url);
+    }
+
     ngOnInit() {
-        this.megaService.getAvailableCampaigns$().subscribe(campaigns => {
-            this.campaign = campaigns[0];
-        });
+        if (!this.campaign) {
+            this.megaService.getCurrentCampaign$().subscribe(campaign => {
+                if (this.campaign || campaign === null) {
+                    return;
+                }
+                this.campaign = campaign;
+            });
+        }
         combineLatest([
             this.signupAssetsService.getRegionNameList$(),
             this.mcSignupService.getAggregatedRegistrations$(),
@@ -156,7 +169,7 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
             console.error('MCSignupComponent: Cannot launch - missing components or data');
             return;
         }
-        const colorConfigProviders = [...data.configProviders, new DynamicColorConfig(this.key2Value)];
+        const colorConfigProviders = [...data.configProviders, new ValueGradientColorConfig(this.key2Value)];
         this.polygonSelectComponent.launch(data.meshes, colorConfigProviders);
         const regionKeys = this.dataSource.map(item => item.key);
         for (const key of regionKeys) {
@@ -207,7 +220,7 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
 
     register() {
         if (!this.canRegister()) {
-            this.openSnackBar("Cannot register: check login and selections", "OK");
+            this.openSnackBar("Cannot register: check login, selections, and campaign stage", "OK");
             return;
         }
         this.mcSignupService.registerUserPicks$(this.dataSource.map(item => item.key)).subscribe({
@@ -222,10 +235,13 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
     }
 
     canRegister() {
-        return this.discordAuthService.isLoggedIn() && this.dataSource.length == this.MAX_SELECTIONS;
+        return this.discordAuthService.isLoggedIn() && this.dataSource.length == this.MAX_SELECTIONS && (this.campaign ? this.campaign.isInRegionSignupStage() : false);
     }
 
     getDisabledTooltip(): string {
+        if (!(this.campaign ? this.campaign.isInRegionSignupStage() : false)) {
+            return 'Signups are not open at this time.';
+        }
         if (!this.discordAuthService.isLoggedIn()) {
             return 'Please log in with Discord to signup';
         }
@@ -248,7 +264,7 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
         });
     }
 
-    getRegisteredPlayersCount() {
-        return -1;
+    getDeadline() {
+        return this.campaign ? this.campaign.getRegionDeadlineDate() : new Date();
     }
 }

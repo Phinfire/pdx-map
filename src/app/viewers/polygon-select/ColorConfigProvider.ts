@@ -1,18 +1,22 @@
-export class RendererConfigProvider {
+import { RGB } from "../../../util/RGB";
+
+export class ColorConfigProvider {
 
     private readonly GEOMETRY_DEFAULT_COLOR = 0x666666;
     private readonly INACTIVE_GEOMETRY_COLOR = 0x202020;
 
-    constructor(private key2color: Map<string, number>) {
+    constructor(private key2color: Map<string, number>, private fullColorByDefault: boolean = false) {
 
     }
 
     getColor(key: string, interactive: boolean, hover: boolean, locked: boolean) {
         if (interactive) {
+            if (this.fullColorByDefault) {
+                return this.getPrimaryColor(key);
+            }
             const primaryColor = this.getPrimaryColor(key);
             if (locked) {
                 if (hover) {
-                    //return this.alphaBlend(primaryColor, this.GEOMETRY_HOVER_COLOR, 0.25);
                     return primaryColor;
                 } else {
                     return primaryColor;
@@ -29,7 +33,7 @@ export class RendererConfigProvider {
         }
     }
 
-     getPrimaryColor(key: string) {
+    getPrimaryColor(key: string) {
         if (this.key2color.has(key)) {
             return this.key2color.get(key)!;
         }
@@ -38,6 +42,7 @@ export class RendererConfigProvider {
 
     getClearColor() {
         return 0x000000;
+        //return new RGB(192, 192, 192).toNumber();
         //return 0x141419;
     }
 

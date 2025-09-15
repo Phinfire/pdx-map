@@ -9,7 +9,7 @@ export abstract class AbstractLandedTitle {
     private holderIndex: number | null = null;
     private deFactoLiegeIndex: number | null;
 
-    protected constructor(private key: string, holder: string, deFactoLiege: string | null, protected save: ICk3Save, protected ck3: CK3) {
+    protected constructor(private key: string, holder: string, deFactoLiege: string | null, private capitalHoldingIndex: number | null, protected save: ICk3Save, protected ck3: CK3) {
         if (holder) {
             this.holderIndex = parseInt(holder);
         }
@@ -18,9 +18,16 @@ export abstract class AbstractLandedTitle {
 
     public abstract getColor(): RGB;
 
-    public abstract getLocalisedName(): String;
+    public abstract getLocalisedName(): string;
 
     public abstract getTier(): RulerTier;
+
+    public getCapitalHolding() {
+        if (this.capitalHoldingIndex != null) {
+            return this.save.getHolding(this.capitalHoldingIndex + "");
+        }
+        return null;
+    }
 
     public getKey() {
         return this.key;

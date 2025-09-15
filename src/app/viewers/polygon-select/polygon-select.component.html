@@ -10,15 +10,8 @@
         <button class="corner-button" (click)="fitCameraToPolygons(0); $event.stopPropagation()" title="Fit camera to view all polygons">
             <mat-icon>home</mat-icon>
         </button>
-        <button class="corner-button" (click)="refreshButtonClicked(); $event.stopPropagation()" title="Reset to initial selection">
+        <!--<button class="corner-button" (click)="refreshButtonClicked(); $event.stopPropagation()" title="Reset to initial selection">
             <mat-icon>refresh</mat-icon>
-        </button>
-    <!--
-        <button class="corner-button" (click)="storeCurrentLockSelectionToFile(); $event.stopPropagation()" title="Save current selection">
-            <mat-icon>save</mat-icon>
-        </button>
-        <button class="corner-button" (click)="loadSelectionFromFile(); $event.stopPropagation()" title="Load selection">
-            <mat-icon>menu_book</mat-icon>
         </button>
     -->
         @if (colorConfigProviders.length > 1) {
@@ -35,6 +28,14 @@
                 [title]="tooltipManager.isTooltipEnabled() ? 'Disable tooltips' : 'Enable tooltips'">
             <mat-icon>{{ tooltipManager.isTooltipEnabled() ? 'chat_bubble' : 'chat_bubble_outline' }}</mat-icon>
         </button>
+        @if (customButtons.length > 0) {
+            <span class="button-separator"></span>
+        }
+        @for (btn of customButtons; track btn.icon) {
+            <button class="corner-button custom" (click)="btn.action(); $event.stopPropagation()" [title]="btn.title" [class.active]="btn.active">
+                <mat-icon>{{ btn.icon }}</mat-icon>
+            </button>
+        }
     </div>
     
     <div class="mesh-tooltip" 

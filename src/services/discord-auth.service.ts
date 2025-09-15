@@ -32,7 +32,7 @@ export class DiscordAuthenticationService {
     //public static readonly API_URL = "https://codingafterdark.de/mc-signup";
     //public static readonly API_URL = "http://localhost:3000/api";
     private static readonly CONFIG = {
-        API_URL: "http://localhost:3000/api",
+        API_URL: "https://codingafterdark.de/mc-signup",
         CLIENT_ID: "1403891748371038462",
         JWT_STORAGE_KEY: "discordToken",
         HEALTH_CHECK_INTERVAL: 30000,

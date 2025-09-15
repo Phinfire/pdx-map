@@ -1,14 +1,13 @@
 
 import { Injectable, OnDestroy } from "@angular/core";
-import { DiscordAuthenticationService } from "./discord-auth.service";
 import { Observable, throwError, from, of, EMPTY, BehaviorSubject, Subject, merge, Subscription } from 'rxjs';
 import { switchMap, catchError, map } from 'rxjs/operators';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { DiscordUser } from "../model/social/DiscordUser";
-import { StartAssignment } from "../app/mc/StartAssignment";
-
+import { DiscordUser } from "../../model/social/DiscordUser";
+import { DiscordAuthenticationService } from "../../services/discord-auth.service";
+// Removed duplicate import
 export interface Signup {
-    discord_id: string,
+    user: DiscordUser,
     picks: string[];
 }
 
@@ -137,27 +136,29 @@ export class MCSignupService implements OnDestroy {
             this._allSignups$.next([]);
             return;
         }
-
-        this.http.get<any>(this.endpoints.moderatorSignups, { headers }).pipe(
-            map((result: any) => {
-                return Array.isArray(result?.signups)
-                    ? result.signups.map((s: any) => {
-                        return {
-                            discord_id: s.discord_id,
-                            picks: s.picks
-                        };
-                    })
-                    : [];
-            }),
-            catchError(() => of([]))
-        ).subscribe({
-            next: (signups: Signup[]) => {
-                this._allSignups$.next(signups);
-            },
-            error: (error) => {
-                console.error('MCSignupService: Error fetching all signups:', error);
-                this._allSignups$.next([]);
-            }
+        this.getAllRegisteredUser$().subscribe(users => {
+            this.http.get<any>(this.endpoints.moderatorSignups, { headers }).pipe(
+                map((result: any) => {
+                    return Array.isArray(result?.signups)
+                        ? result.signups.map((s: any) => {
+                            const user = users.find(u => u.id === s.discord_id);
+                            return {
+                                user,
+                                picks: s.picks
+                            };
+                        })
+                        : [];
+                }),
+                catchError(() => of([]))
+            ).subscribe({
+                next: (signups: Signup[]) => {
+                    this._allSignups$.next(signups);
+                },
+                error: (error) => {
+                    console.error('MCSignupService: Error fetching all signups:', error);
+                    this._allSignups$.next([]);
+                }
+            });
         });
     }
 

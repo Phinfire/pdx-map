@@ -1,14 +1,20 @@
 <table mat-table [dataSource]="dataSource" matSort>
-    <ng-container *ngFor="let col of columns; let index = index" [matColumnDef]="col.def" [sticky]="index < 3">
+    <ng-container *ngFor="let col of columns; let index = index" [matColumnDef]="col.def" [sticky]="false">
         <th mat-header-cell *matHeaderCellDef [mat-sort-header]="col.sortable ? col.def : ''"
             [matTooltip]="col.tooltip" matTooltipClass="tooltip" [cdkContextMenuTriggerFor]="headermenu"
             (cdkContextMenuOpened)="selectedColumn = col">
-            {{col.header}}
+            <ng-container *ngIf="col.headerImage; else headerText">
+                <img [src]="col.headerImage" alt="" style="max-height:1.4em;vertical-align:middle;" />
+            </ng-container>
+            <ng-template #headerText>
+                {{col.header}}
+            </ng-template>
         </th>
         <td mat-cell *matCellDef="let element; let i = index"
             [ngClass]="{'negative-cell': col.cellValue(element, i) < 0}">
             <ng-container *ngIf="col.isImage; else textCell">
-                <img [src]="col.visibleCellValue(element, i)" alt="" />
+                <img [src]="col.visibleCellValue(element, i)" alt="" [matTooltip]="col.cellTooltip(element, i)"
+                    [matTooltipDisabled]="!showTooltips || !col.cellTooltip(element, i)" />
             </ng-container>
             <ng-template #textCell>
                 <span [matTooltip]="col.cellTooltip(element, i)"

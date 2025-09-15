@@ -139,4 +139,8 @@ export class CK3 {
         }
         return null;
     }
+
+    getBarony2ProvinceIndices() {
+        return this.barony2provinceIndices;
+    }
 }

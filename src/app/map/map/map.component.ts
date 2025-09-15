@@ -1,12 +1,11 @@
 import * as L from 'leaflet';
 import * as d3 from 'd3';
-import { Component, Input, ViewChild } from '@angular/core';
-import { ElementRef } from '@angular/core';
-import { MapService } from '../map.service';
 import { HttpClient } from '@angular/common/http';
-import { IHasKey, MapEU4DataProvider } from './config/MapDataProvider';
-import { PdxFileService } from '../../services/pdx-file.service';
-import { Eu4Save } from '../../model/eu4/Eu4Save';
+import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Eu4Save } from '../../../model/eu4/Eu4Save';
+import { PdxFileService } from '../../../services/pdx-file.service';
+import { MapService } from '../../map.service';
+import { IHasKey, MapEU4DataProvider } from '../config/MapDataProvider';
 
 @Component({
     selector: 'app-map',
@@ -32,6 +31,7 @@ export class MapComponent {
     @ViewChild('mapcontainer') mapContainer!: ElementRef<HTMLDivElement>;
 
     constructor(private hostElement: ElementRef, private mapService: MapService, private fileService: PdxFileService, http: HttpClient) {
+        //"http://127.0.0.1:5500/public/mp_Greater_Elbia1705_05_28.eu4"
         http.get('http://127.0.0.1:5500/public/test.json').subscribe((data) => {
             this.dataProvider.setActiveSave(new Eu4Save(data));
             this.showPerProvinceValue(this.dataProvider.getAvailableValueModes()[0].iconUrl, this.dataProvider.getAvailableValueModes()[0].valueGetter);
@@ -39,7 +39,7 @@ export class MapComponent {
     }
 
     ngOnInit() {
-        this.mapService.fetchEU4GeoJson().subscribe((data) => {
+        this.mapService.fetchEU4GeoJson(true,true).subscribe((data) => {
             this.geoJson = data;
         });
         

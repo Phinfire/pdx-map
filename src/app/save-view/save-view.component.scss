@@ -75,6 +75,16 @@
 }
 
 ::ng-deep .mat-mdc-tab-body-content {
-    overflow: auto;
     background: var(--void-color);
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.tab-content-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 1em 2em 2em 2em;
 }

@@ -15,6 +15,11 @@ html {
 
 :root {
     --background-color: rgb(32, 32, 32);
+
+    --table-row-alt: rgba(255, 255, 255, 0.025);
+    --table-row-hover: rgba(255, 255, 255, 0.12);
+    --table-row-alt-hover: rgba(255, 255, 255, 0.12);
+
     --background-color-transparent: rgba(32, 32, 32, 0.8);
     --lighter-background-color: rgb(37, 37, 37);
     --text-color: rgba(255, 255, 255, 0.9);
@@ -28,8 +33,10 @@ html {
 
     --dark-theme-text-color: rgb(255, 255, 255);
     --dark-theme-background-color: rgb(32, 32, 32);
+    --dark-theme-background-color-alt: rgb(40, 40, 48);
     --light-theme-text-color: rgb(0, 0, 0);
     --light-theme-background-color: rgb(255, 255, 255);
+    --light-theme-background-color-alt: rgb(240, 240, 240);
 
     --mat-sys-surface: var(--background-color);
     --mat-sys-on-surface: var(--text-color);
@@ -41,15 +48,14 @@ html {
     
     --mat-sys-outline: var(--border-color);
     --mat-sys-primary: rgb(0, 180, 0); // was text color
-
-    --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --box-shadow-small: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --box-shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --box-shadow-extra-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .light-theme {
     --background-color: var(--light-theme-background-color);
+    /* --background-color-alt removed, replaced with new neutral for tables */
+    --table-row-alt: rgba(0, 0, 0, 0.025); /* subtle dark overlay for light theme */
+    --table-row-hover: rgba(0, 0, 0, 0.06); /* slightly more for hover on base */
+    --table-row-alt-hover: rgba(0, 0, 0, 0.12); /* more for hover on alt */
     --lighter-background-color: rgb(240, 240, 240);
     --text-color: var(--light-theme-text-color);
     --border-color: var(--text-color);
@@ -69,6 +75,10 @@ html {
 
 .dark-theme {
     --background-color: var(--dark-theme-background-color);
+    /* --background-color-alt removed, replaced with new neutral for tables */
+    --table-row-alt: rgba(255, 255, 255, 0.025);
+    --table-row-hover: rgba(255, 255, 255, 0.06);
+    --table-row-alt-hover: rgba(255, 255, 255, 0.12);
     --lighter-background-color: rgb(37, 37, 37);
     --text-color: var(--dark-theme-text-color);
     --border-color: var(--text-color);

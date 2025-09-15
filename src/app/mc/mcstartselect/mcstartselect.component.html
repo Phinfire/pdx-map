@@ -1,8 +1,19 @@
 @if (campaign) {
 <div class="top">
     <div class="header-container">
-        <h1>Select Your Starting Position in: <span class="region-name">{{ assignment.region_key }}</span></h1>
-        Choose your starting county within your assigned region.
+        <h1>
+            @if (goBackFunction) {
+                <button mat-button 
+                        class="back-button"
+                        (click)="goBackFunction!()"
+                        matTooltip="Go back"
+                        matTooltipPosition="below"
+                        aria-label="Go back">
+                    <mat-icon class="back-icon">chevron_left</mat-icon>
+                </button>
+            }
+            Select Your Starting Position in: <span class="region-name">{{ assignment.region_key }}</span>
+        </h1>
     </div>
     <div class="timer-container">
         <app-timer [label]="'Deadline:'" [endDate]="campaign.getStartDeadlineDate()"></app-timer>
@@ -15,7 +26,6 @@
             [tooltipProvider]="tooltipProvider" [meshBuddiesProvider]="meshBuddiesProvider"></app-polygon-select>
     </div>
     <div class="side-container">
-        <h2>Start</h2>
         <div class="content-wrapper">
             @if (hasSelectedPosition()) {
                 <div class="selection-info">
@@ -26,14 +36,21 @@
             @if (!hasSelectedPosition()) {
                 <p>Click on a county in the map to select your starting county.</p>
             }
-
+            <span>Bitte stellt sicher, dass euer Character:</span>
+            <ul>
+                <li>Maximal 400 Punkte wert ist</li>
+                <li>Eine Religion und Kultur die in mindestens einer Provinz in der Region vorkommt hat</li>
+                <li>Nicht auf gebauten Monumenten oder Minen (gebaut oder ungebaut) startet</li>
+            </ul>
             @if (ruler) {
                 <div class="character-info">
+                    <button mat-icon-button class="close-ruler-btn" (click)="clearRuler()" matTooltip="Remove uploaded ruler" matTooltipPosition="below" aria-label="Remove uploaded ruler" style="float:right;">
+                        <mat-icon>close</mat-icon>
+                    </button>
                     <h3>{{ ruler.name }} ({{ ruler.age }})</h3>
                     <div class="character-details">
                         <p><strong>Culture:</strong> {{ ruler.culture }}</p>
                         <p><strong>Faith:</strong> {{ ruler.faith }}</p>
-                        
                         <div class="traits-layout">
                             @if (ruler.educationTrait) {
                                 <div class="education-section">
@@ -44,7 +61,6 @@
                                          matTooltipPosition="above">
                                 </div>
                             }
-                            
                             @if (ruler.traits && ruler.traits.length > 0) {
                                 <div class="traits-compact">
                                     @for (trait of ruler.traits; track trait.getName()) {
@@ -60,17 +76,28 @@
                     </div>
                 </div>
             }
-            
+
             <div class="upload-section">
                 <input #fileInput type="file" accept=".ck3ruler" (change)="onFileSelected($event)" style="display: none;" />
-                <button mat-flat-button 
-                        color="primary" 
-                        class="upload-button" 
-                        [disabled]="!hasSelectedPosition()"
-                        [matTooltip]="!hasSelectedPosition() ? 'Please select a position first' : 'Upload your custom ruler file'"
+                @if (!ruler) {
+                    <button mat-flat-button 
+                            color="primary" 
+                            class="upload-button" 
+                            [disabled]="!hasSelectedPosition()"
+                            [matTooltip]="!hasSelectedPosition() ? 'Please select a position first' : 'Upload your custom ruler file'"
+                            matTooltipPosition="above"
+                            (click)="fileInput.click()">
+                        Upload Ruler
+                    </button>
+                }
+                <button mat-flat-button
+                        color="accent"
+                        class="upload-button"
+                        [disabled]="!hasSelectedPosition() || !rulerFileContent"
+                        [matTooltip]="!hasSelectedPosition() ? 'Please select a position first' : (!rulerFileContent ? 'Please upload a ruler file first' : 'Upload your selection and ruler')"
                         matTooltipPosition="above"
-                        (click)="fileInput.click()">
-                    Upload Ruler
+                        (click)="uploadSelection()">
+                    Submit Start & Ruler
                 </button>
             </div>
         </div>

@@ -4,19 +4,53 @@
     <app-mcsignup [campaign]="campaign"></app-mcsignup>
     }
     @if (authService.isLoggedIn()) {
-        @if (isInStartSelectionStage()) {
+        @if (isInStartSelectionStage() || isInWaitingForFirstSessionStage()) {
             @if (userAssignment) {
-                <app-mcstartselect [campaign]="campaign" [assignment]="userAssignment"></app-mcstartselect>
+                @if (currentView == VIEW.START_SELECTION) {
+                    <app-mcstartselect
+                        [campaign]="campaign"
+                        [assignment]="userAssignment"
+                        [goBackFunction]="goBackToPlayerList">
+                    </app-mcstartselect>
+                }
+                @if (currentView == VIEW.ASSIGNMENT_TABLE) {
+                    <h1>{{ campaign.getName() }} Mega Campaign - Start Regions</h1>
+                    <div class="player-list-container">
+                        <div class="table-container">
+                            <app-table [rowElements]="getAssignments(0)" [columns]="getColumns(0)"></app-table>
+                            <app-table [rowElements]="getAssignments(1)" [columns]="getColumns(1)"></app-table>
+                        </div>
+                        <button mat-flat-button (click)="goToStartSelection()">Select your starting county</button>
+                        <button mat-button (click)="goToTraitHistogram()">View Trait Histogram</button>
+                        @if (isInWaitingForFirstSessionStage()) {
+                            <button mat-button (click)="downloadAllRulersAsZip()">Download All Rulers</button>
+                        }
+                    </div>
+                }
+                @if (currentView == VIEW.PLOT_VIEW) {
+                    <div class="plot-container">
+                        <div class="header-container">
+                            <h1>
+                                <button mat-button 
+                                        class="back-button"
+                                        (click)="goBackToPlayerList()"
+                                        matTooltip="Go back"
+                                        matTooltipPosition="below"
+                                        aria-label="Go back">
+                                    <mat-icon class="back-icon">chevron_left</mat-icon>
+                                </button>
+                                Player Ruler Traits
+                            </h1>
+                        </div>
+                        <app-plot-view [plotablesInput]="traitPlotables"></app-plot-view>
+                    </div>
+                }
             }
             @if (!userAssignment) {
                 <div class="pseudo-component">
                     <p>No region assigned yet</p>
-                </div>
-                
+                </div>   
             }
-        }
-        @if (isInWaitingForFirstSessionStage()) {
-            <p>Waiting for first session...</p>
         }
         @if (isPlayingCk3()) {
             <p>Playing CK3!</p>

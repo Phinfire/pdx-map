@@ -3,16 +3,49 @@ import { ITableColumn } from "./ITableColumn";
 
 export class TableColumn<T> implements ITableColumn<T> {
 
-    public static getIndexColumn<T>(): TableColumn<T> {
+    public readonly headerImage?: string;
+
+    public static getIndexColumn<T>(offset: number = 0): TableColumn<T> {
         return new TableColumn<T>(
             'position',
             '',
             null,
             false,
-            (element: T, index: number) => index + 1,
+            (element: T, index: number) => index + 1 + offset,
             (element: T, index: number) => null
         );
     };
+
+    public static wrapColumn<I,O>(column: TableColumn<I>, transform: (element: O) => I | null): TableColumn<O> {
+        return new TableColumn<O>(
+            column.def,
+            column.header,
+            column.tooltip,
+            column.sortable,
+            (element: O, index: number) => transform(element) != null ? column.cellValue(transform(element)!, index) : null,
+            (element: O, index: number) => transform(element) != null  ? column.cellTooltip(transform(element)!, index) : null,
+            column.subscript ? ((element: O) => {
+                const transformed = transform(element);
+                return transformed != null ? column.subscript!(transformed) : "";
+            }) : null,
+            column.isImage,
+            column.headerImage
+        );
+    }
+
+    public static from<T>(header: string, cellValue: (element: T, index: number) => any, cellTooltip: (element: T, index: number) => string, headerImage?: string) {
+        return new TableColumn<T>(
+            header.toLowerCase().replace(/\s+/g, '_'),
+            header,
+            null,
+            true,
+            cellValue,
+            cellTooltip,
+            null,
+            headerImage != null,
+            headerImage
+        );
+    }
 
     public readonly visibleCellValue: (element: T, index: number) => any;
     public readonly isImage: boolean;
@@ -25,13 +58,15 @@ export class TableColumn<T> implements ITableColumn<T> {
         public readonly cellValue: (element: T, index: number) => any,
         public readonly cellTooltip: (element: T, index: number) => string | null,
         public readonly subscript: ((element: T) => string) | null = null,
-        isImage: boolean = false
+        isImage: boolean = false,
+        headerImage?: string
     ) {
         this.isImage = isImage;
+        this.headerImage = headerImage;
         this.visibleCellValue = (element: T, index: number) => {
             const value = this.cellValue(element, index);
             if (this.isImage) {
-                return value; // image URL or object
+                return value;
             }
             if (typeof value === 'number') {
                 return this.format(value);

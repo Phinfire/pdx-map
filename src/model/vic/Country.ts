@@ -2,8 +2,9 @@ import { Building } from "./Building";
 import { CountryBudget } from "./CountryBudget";
 import { ModelElementList } from "./ModelElementList";
 import { Pop } from "./Pop";
+import { HasElements } from "../../util/table/HasElements";
 
-export class Country {
+export class Country implements HasElements<Building> {
 
     public static fromJson(json: any) {
         return new Country(
@@ -64,6 +65,10 @@ export class Country {
     }
 
     getBuildings(): ModelElementList<Building> {
+        return this.buildings;
+    }
+
+    getElements(): ModelElementList<Building> {
         return this.buildings;
     }
 

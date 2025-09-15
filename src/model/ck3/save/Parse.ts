@@ -9,55 +9,69 @@ import { LandedTitle } from "../title/LandedTitle";
 import { CustomLandedTitle } from "../title/CustomLandedTitle";
 import { RulerTier } from "../RulerTier";
 import { RGB } from "../../../util/RGB";
+import { DynastyHouse } from "../DynastyHouse";
+import { County } from "../County";
+import { Holding } from "../Holding";
 
-function readPlayers(data: any, characterCreator: (id: string, data: any) => Character | null): Ck3Player[] {
-    const players = [];
-    if (!data.played_character) {
-        console.warn("No played_character data found in save file");
-        return [];
-    }
-    let playedCharacters = [];
-    if (!Array.isArray(data.played_character)) {
-        playedCharacters = [data.played_character];
-    } else {
-        playedCharacters = data.played_character;
-    }
-    for (let i = 0; i < playedCharacters.length; i++) {
-        const playerData = playedCharacters[i];
-        if (!playerData?.name || !playerData?.character) {
-            console.warn("Player data missing required fields (name or character):", playerData);
-            continue;
+export function readPlayers(data: any, characterCreator: (id: string, data: any) => Character | null) {
+        const players = [];
+        if (!data.played_character) {
+            console.warn("No played_character data found in save file");
+            return [];
         }
-        const playerName = playerData.name;
-        const character = characterCreator("" + playerData.character, data);
-        if (!character) {
-            console.warn(`Skipping player '${playerName}' with invalid character ID: ${playerData.character}`);
-            continue;
+        let playedCharacters = [];
+        if (!Array.isArray(data.played_character)) {
+            playedCharacters = [data.played_character];
+        } else {
+            playedCharacters = data.played_character;
         }
-        const previousCharacters = new Map<string, Character>();
-        if (playerData.legacy && Array.isArray(playerData.legacy)) {
-            const sortedLegacy = playerData.legacy.sort(((a: any, b: any) => {
-                if (!a.date && !b.date) return 0;
-                if (!a.date) return 1;
-                if (!b.date) return -1;
-                const dateA = a.date instanceof Date ? a.date.getTime() : new Date(a.date).getTime();
-                const dateB = b.date instanceof Date ? b.date.getTime() : new Date(b.date).getTime();
-                return dateB - dateA;
-            }));
-            for (let i = 0; i < sortedLegacy.length; i++) {
-                const legacyEntry = sortedLegacy[i];
-                if (legacyEntry?.character) {
-                    const legacyCharacter = characterCreator("" + legacyEntry.character, data);
-                    if (legacyCharacter) {
-                        previousCharacters.set(legacyEntry.date, legacyCharacter);
+        for (let i = 0; i < playedCharacters.length; i++) {
+            const playerData = playedCharacters[i];
+            if (!playerData?.name || !playerData?.character) {
+                console.warn("Player data missing required fields (name or character):", playerData);
+                continue;
+            }
+            const playerName = playerData.name;
+            const characterObject = playerData.character === (32 ** 2 - 1) ? characterCreator("" + playerData.character, data) : null;
+            if (!characterObject) {
+                //console.warn(`Skipping player '${playerName}' with invalid character ID: ${playerData.character}`);
+                //continue;
+            }
+            const previousCharacters = new Map<string, Character>();
+            if (playerData.legacy && Array.isArray(playerData.legacy)) {
+                const sortedLegacy = playerData.legacy.sort(((a: any, b: any) => {
+                    if (!a.date && !b.date) return 0;
+                    if (!a.date) return 1;
+                    if (!b.date) return -1;
+                    const dateA = a.date instanceof Date ? a.date.getTime() : new Date(a.date).getTime();
+                    const dateB = b.date instanceof Date ? b.date.getTime() : new Date(b.date).getTime();
+                    return dateB - dateA;
+                }));
+                for (let i = 0; i < sortedLegacy.length; i++) {
+                    const legacyEntry = sortedLegacy[i];
+                    if (legacyEntry?.character) {
+                        const legacyCharacter = characterCreator("" + legacyEntry.character, data);
+                        if (legacyCharacter) {
+                            previousCharacters.set(legacyEntry.date, legacyCharacter);
+                        }
                     }
                 }
             }
+            const player = new Ck3Player(playerName, characterObject, previousCharacters);
+            players.push(player);
         }
-        const player = new Ck3Player(playerName, character, previousCharacters);
-        players.push(player);
+        return players;
     }
-    return players;
+
+export function readDynasties(data: any, save: ICk3Save): DynastyHouse[] {
+    const dynasties = [];
+    for (const key in data.dynasties?.dynasty_house) {
+        if (Object.prototype.hasOwnProperty.call(data.dynasties.dynasty_house, key)) {
+            const id = parseInt(key);
+            dynasties.push(new DynastyHouse(id, data.dynasties.dynasty_house[key], save));
+        }
+    }
+    return dynasties;
 }
 
 /**
@@ -143,13 +157,38 @@ export function createTitle(data: any, save: ICk3Save, ck3: CK3): AbstractLanded
     const key = data.key;
     const holder = data.holder;
     const de_facto_liege = data.de_facto_liege;
+    const capitalHoldingIndex = data.capital || null;
     if (key.startsWith("x_")) {
         const rgb = new RGB(data.color.rgb[0], data.color.rgb[1], data.color.rgb[2]);
         const tierString = data.tier ? RulerTier.fromRealmTier(data.tier) : RulerTier.NONE;
         const vassalTitleIndices = data.de_jure_vassals || [];
         const name = data.name;
-        return new CustomLandedTitle(key, holder, de_facto_liege, rgb, tierString, vassalTitleIndices, name, save, ck3);
+        return new CustomLandedTitle(key, holder, de_facto_liege, rgb, tierString, vassalTitleIndices, name, capitalHoldingIndex, save, ck3);
     } else {
-        return new LandedTitle(key, holder, de_facto_liege, save, ck3);
+        return new LandedTitle(key, holder, de_facto_liege, capitalHoldingIndex, save, ck3);
     }
+}
+
+export function readCountries(data: any, save: ICk3Save, ck3: CK3): County[] {
+    const countries: County[] = [];
+    if (data.county_manager!.counties) {
+        for (let countyKey of Object.keys(data.county_manager.counties)) {
+            countries.push(County.fromRawData(countyKey, data.county_manager.counties[countyKey], save, ck3));
+        }
+    }
+    return countries;
+}
+
+export function readAllHoldings(data: any, parentSave: ICk3Save, ck3: CK3) {
+    const index2Holding = new Map<string, Holding>();
+    if (data.provinces) {
+        for (let provinceId of Object.keys(data.provinces)) {
+            const provinceData = data.provinces[provinceId];
+            if (provinceData.holding) {
+                const holding = Holding.fromRawData(provinceId + "", provinceData.holding, ck3);
+                index2Holding.set(provinceId + "", holding);
+            }
+        }
+    }
+    return index2Holding;
 }

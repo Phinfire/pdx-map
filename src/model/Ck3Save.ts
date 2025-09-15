@@ -1,16 +1,18 @@
 import { Character } from "./ck3/Character";
 import { CK3 } from "./ck3/CK3";
+import { County } from "./ck3/County";
 import { Culture } from "./ck3/Culture";
+import { DynastyHouse } from "./ck3/DynastyHouse";
 import { Faith } from "./ck3/Faith";
 import { Holding } from "./ck3/Holding";
 import { Ck3Player } from "./ck3/Player";
 import { ICk3Save } from "./ck3/save/ICk3Save";
-import { readAllFaiths, readAllCultures, readLandedTitles, createTitle } from "./ck3/save/Parse";
+import { readAllFaiths, readAllCultures, readLandedTitles, createTitle, readPlayers, readDynasties, readCountries, readAllHoldings } from "./ck3/save/Parse";
 import { AbstractLandedTitle } from "./ck3/title/AbstractLandedTitle";
 
 export class Ck3Save implements ICk3Save {
 
-    // character data to avoid object instantiation at init
+    // raw character data to avoid object instantiation at init
     private livingCharacters: any;
     private deadUnprunableCharacters: any;
 
@@ -18,82 +20,37 @@ export class Ck3Save implements ICk3Save {
     private faiths: Faith[] = [];
     private cultures: Culture[] = [];
     private landedTitles: AbstractLandedTitle[] = [];
+    private dynastyHouses: DynastyHouse[] = [];
+    private counties: County[] = [];
+    private index2Holding: Map<string, Holding> = new Map<string, Holding>();
 
     private titleKey2Index = new Map<string, number>();
 
     private cachedCharacters = new Map<string, Character>();
 
     static fromRawData(data: any, ck3: CK3): Ck3Save {
-        const save = new Ck3Save(ck3);
+        const save = new Ck3Save(ck3, data.date);
         save.initialize(data);
         return save;
     }
 
-    private constructor(private ck3: CK3) {
+    private constructor(private ck3: CK3, private ingameDate: Date) {
 
     }
 
     private initialize(data: any) {
-        this.players = Ck3Save.readPlayers(data, (id, data) => this.findDataAndCreateCharacter(data, id));
+        this.players = readPlayers(data, (id, data) => this.findDataAndCreateCharacter(data, id));
         this.faiths = readAllFaiths(data);
         this.cultures = readAllCultures(data);
+        this.counties = readCountries(data, this, this.ck3);
         this.landedTitles = readLandedTitles(data, (titleData) => createTitle(titleData, this, this.ck3));
+        this.index2Holding = readAllHoldings(data, this, this.ck3);
         this.landedTitles.forEach((title, index) => {
             this.titleKey2Index.set(title.getKey(), index);
         });
+        this.dynastyHouses = readDynasties(data, this);
         this.livingCharacters = data.living || {};
         this.deadUnprunableCharacters = data.dead_unprunable || {};
-        //console.log("Ck3Save initialized with players:", this.players.length, "faiths:", this.faiths.length, "cultures:", this.cultures.length, "titles:", this.titles.size);
-    }
-
-    private static readPlayers(data: any, characterCreator: (id: string, data: any) => Character | null) {
-        const players = [];
-        if (!data.played_character) {
-            console.warn("No played_character data found in save file");
-            return [];
-        }
-        let playedCharacters = [];
-        if (!Array.isArray(data.played_character)) {
-            playedCharacters = [data.played_character];
-        } else {
-            playedCharacters = data.played_character;
-        }
-        for (let i = 0; i < playedCharacters.length; i++) {
-            const playerData = playedCharacters[i];
-            if (!playerData?.name || !playerData?.character) {
-                console.warn("Player data missing required fields (name or character):", playerData);
-                continue;
-            }
-            const playerName = playerData.name;
-            const character = characterCreator("" + playerData.character, data);
-            if (!character) {
-                console.warn(`Skipping player '${playerName}' with invalid character ID: ${playerData.character}`);
-                continue;
-            }
-            const previousCharacters = new Map<string, Character>();
-            if (playerData.legacy && Array.isArray(playerData.legacy)) {
-                const sortedLegacy = playerData.legacy.sort(((a: any, b: any) => {
-                    if (!a.date && !b.date) return 0;
-                    if (!a.date) return 1;
-                    if (!b.date) return -1;
-                    const dateA = a.date instanceof Date ? a.date.getTime() : new Date(a.date).getTime();
-                    const dateB = b.date instanceof Date ? b.date.getTime() : new Date(b.date).getTime();
-                    return dateB - dateA;
-                }));
-                for (let i = 0; i < sortedLegacy.length; i++) {
-                    const legacyEntry = sortedLegacy[i];
-                    if (legacyEntry?.character) {
-                        const legacyCharacter = characterCreator("" + legacyEntry.character, data);
-                        if (legacyCharacter) {
-                            previousCharacters.set(legacyEntry.date, legacyCharacter);
-                        }
-                    }
-                }
-            }
-            const player = new Ck3Player(playerName, character, previousCharacters);
-            players.push(player);
-        }
-        return players;
     }
 
     public getCK3(): CK3 {
@@ -128,26 +85,29 @@ export class Ck3Save implements ICk3Save {
         }, "" + characterId,);
     }
 
-    public getDynastyHouseAndDynastyData(houseId: number) {
-        throw new Error("Method not implemented.");
-        /*if (this.data.dynasties && this.data.dynasties.dynasty_house && this.data.dynasties.dynasty_house[houseId]) {
-            return new DynastyHouse(houseId, this.data.dynasties.dynasty_house[houseId], this);
+    getDynastyHouse(houseId: number): DynastyHouse | null {
+        if (this.dynastyHouses[houseId]) {
+            return this.dynastyHouses[houseId];
         }
         return null;
-        **/
+    }
+
+    public getDynastyHouseAndDynastyData(houseId: number) {
+        throw new Error("Method not implemented.");
     }
 
     getLandedTitles() {
         return this.landedTitles;
     }
 
-    getCurrentDate(): Date {
-        throw new Error("Method not implemented.");
+    getCurrentIngameDate(): Date {
+        return this.ingameDate;
     }
 
-    getTitleByIndex(index: number): AbstractLandedTitle {
+    getTitleByIndex(index: number): AbstractLandedTitle | null {
         if (index < 0 || index >= this.landedTitles.length) {
-            throw new Error("Invalid title index: " + index + ". Expected [0, " + (this.landedTitles.length - 1) + "]");
+            console.error("Invalid title index:", index, "length:", this.landedTitles.length);
+            return null;
         }
         return this.landedTitles[index];
     }
@@ -161,11 +121,17 @@ export class Ck3Save implements ICk3Save {
     }
 
     getCulture(cultureIndex: number): Culture {
-        throw new Error("Method not implemented.");
+        if (cultureIndex < 0 || cultureIndex >= this.cultures.length) {
+            throw new Error("Invalid culture index: " + cultureIndex + ". Expected [0, " + (this.cultures.length - 1) + "]");
+        }
+        return this.cultures[cultureIndex];
     }
 
     getFaith(faithIndex: number): Faith {
-        throw new Error("Method not implemented.");
+        if (faithIndex < 0 || faithIndex >= this.faiths.length) {
+            throw new Error("Invalid faith index: " + faithIndex + ". Expected [0, " + (this.faiths.length - 1) + "]");
+        }
+        return this.faiths[faithIndex];
     }
 
     getPlayers(): Ck3Player[] {
@@ -173,11 +139,25 @@ export class Ck3Save implements ICk3Save {
     }
 
     getLivingCharactersFiltered(filter: (character: Character) => boolean): Character[] {
-        throw new Error("Method not implemented.");
+        const result = [];
+        for (const charId in this.livingCharacters) {
+            const char = this.getCharacter(parseInt(charId));
+            if (!char) {
+                console.warn("Character with ID " + charId + " unable to be created/found.");
+                continue;
+            }
+            if (filter(char)) {
+                result.push(char);
+            }
+        }
+        return result;
     }
 
-    getHolding(index: number): Holding {
-        throw new Error("Method not implemented.");
+    getHolding(index: string) {
+        if (this.index2Holding.has(index)) {
+            return this.index2Holding.get(index)!;
+        }
+        return null;
     }
 
     getTitle(key: string): AbstractLandedTitle {
@@ -188,4 +168,7 @@ export class Ck3Save implements ICk3Save {
         throw new Error(`Title with key ${key} not found.`);
     }
 
+    getCounties(): County[] {
+        return this.counties;
+    }
 }

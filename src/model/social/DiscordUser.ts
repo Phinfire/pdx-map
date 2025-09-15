@@ -24,4 +24,8 @@ export class DiscordUser {
         }
         return `https://cdn.discordapp.com/avatars/${this.id}/${this.avatar}.png`;
     }
+    
+    getName() {
+        return this.global_name && this.global_name.length > 0 ? this.global_name : `${this.username}`;
+    }
 }

@@ -33,7 +33,7 @@
     align-items: center;
     gap: 16px;
     z-index: 999;
-    
+
     p {
         margin: 0;
         font-size: 16px;
@@ -59,7 +59,7 @@
 
 .corner-button {
     padding: 10px;
-    background-color: #40a4a4;
+    background-color: var(--mat-sys-primary);
     color: var(--text-color);
     border: none;
     border-radius: 6px;
@@ -86,11 +86,11 @@
 
     &.active {
         background-color: #28a745;
-        
+
         &:hover {
             background-color: #218838;
         }
-        
+
         &:active {
             background-color: #1e7e34;
         }
@@ -120,12 +120,12 @@
     opacity: 0;
     transform: translateY(-5px);
     transition: opacity 0.2s ease, transform 0.2s ease;
-    
+
     &.visible {
         opacity: 1;
         transform: translateY(0);
     }
-    
+
     &::before {
         content: '';
         position: absolute;
@@ -137,7 +137,7 @@
         border-right: 4px solid transparent;
         border-bottom: 4px solid rgba(0, 0, 0, 0.9);
     }
-    
+
     &.above::before {
         top: auto;
         bottom: -4px;

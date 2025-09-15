@@ -44,7 +44,6 @@ export class MapEU4DataProvider {
                 tooltip: "Province Development",
                 valueGetter: (arg: IHasKey) => this.activeSave!.getProvinces().get(arg.getKey())!.getDevelopment().reduce((a, b) => a + b, 0)
             },
-
             {
                 iconUrl: "https://codingafterdark.de/mc/ideas/icon_powers_administrative.webp",
                 tooltip: "Province Base Tax Development",
