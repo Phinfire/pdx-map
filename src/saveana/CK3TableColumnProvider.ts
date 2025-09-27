@@ -14,8 +14,10 @@ export class CK3TableColumnProvider {
                 new SimpleTableColumn<Character>("faith", "Faith", char => char.getFaith() ? char.getFaith()!.getName() : null, null, false, this.rootUrl + "/faith/catholic.webp"),
                 new SimpleTableColumn<Character>("culture", "Culture",
                     char => char.getCulture() ? char.getCulture()!.getName() : null, null, false, this.rootUrl + "/message_feed/culture.webp"),
-                new SimpleTableColumn<Character>("tech", "Tech",
-                    char => char.getCulture() ? char.getCulture()!.getResearchedInnovationNames().length : 0, null, false),
+                    TableColumn.from("Tech", 
+                        char => char.getCulture() ? char.getCulture()!.getResearchedInnovationNames().length : 0,
+                        char => char.getCulture() ? char.getCulture()!.getResearchedInnovationNames().join("\n") : ""
+                    ),
                 new SimpleTableColumn<Character>("age", "Age",
                     char => char.getAge()),
                 new TableColumn<Character>(

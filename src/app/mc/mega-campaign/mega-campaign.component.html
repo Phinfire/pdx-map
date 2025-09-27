@@ -4,7 +4,7 @@
     <app-mcsignup [campaign]="campaign"></app-mcsignup>
     }
     @if (authService.isLoggedIn()) {
-        @if (isInStartSelectionStage() || isInWaitingForFirstSessionStage()) {
+        @if (isInStartSelectionStage() || isInWaitingForFirstSessionStage() || isPlayingCk3()) {
             @if (userAssignment) {
                 @if (currentView == VIEW.START_SELECTION) {
                     <app-mcstartselect
@@ -20,9 +20,11 @@
                             <app-table [rowElements]="getAssignments(0)" [columns]="getColumns(0)"></app-table>
                             <app-table [rowElements]="getAssignments(1)" [columns]="getColumns(1)"></app-table>
                         </div>
+                        @if (!isPlayingCk3()) {
                         <button mat-flat-button (click)="goToStartSelection()">Select your starting county</button>
+                        }
                         <button mat-button (click)="goToTraitHistogram()">View Trait Histogram</button>
-                        @if (isInWaitingForFirstSessionStage()) {
+                        @if (isInWaitingForFirstSessionStage() || isPlayingCk3()) {
                             <button mat-button (click)="downloadAllRulersAsZip()">Download All Rulers</button>
                         }
                     </div>
@@ -51,9 +53,6 @@
                     <p>No region assigned yet</p>
                 </div>   
             }
-        }
-        @if (isPlayingCk3()) {
-            <p>Playing CK3!</p>
         }
     }
     @if (!authService.isLoggedIn()) {

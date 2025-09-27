@@ -9,12 +9,14 @@ import { Ck3Player } from "./ck3/Player";
 import { ICk3Save } from "./ck3/save/ICk3Save";
 import { readAllFaiths, readAllCultures, readLandedTitles, createTitle, readPlayers, readDynasties, readCountries, readAllHoldings } from "./ck3/save/Parse";
 import { AbstractLandedTitle } from "./ck3/title/AbstractLandedTitle";
+import { ParadoxSave } from "./ParadoxSave";
 
-export class Ck3Save implements ICk3Save {
+export class Ck3Save implements ICk3Save, ParadoxSave {
 
-    // raw character data to avoid object instantiation at init
-    private livingCharacters: any;
-    private deadUnprunableCharacters: any;
+    // pre-created character collections
+    private livingCharacters: Map<string, Character> = new Map();
+    private deadUnprunableCharacters: Map<string, Character> = new Map();
+    private deadPrunableCharacters: Map<string, Character> = new Map();
 
     private players: Ck3Player[] = [];
     private faiths: Faith[] = [];
@@ -25,8 +27,6 @@ export class Ck3Save implements ICk3Save {
     private index2Holding: Map<string, Holding> = new Map<string, Holding>();
 
     private titleKey2Index = new Map<string, number>();
-
-    private cachedCharacters = new Map<string, Character>();
 
     static fromRawData(data: any, ck3: CK3): Ck3Save {
         const save = new Ck3Save(ck3, data.date);
@@ -39,6 +39,9 @@ export class Ck3Save implements ICk3Save {
     }
 
     private initialize(data: any) {
+        // Create all characters first
+        this.createAllCharacters(data);
+        
         this.players = readPlayers(data, (id, data) => this.findDataAndCreateCharacter(data, id));
         this.faiths = readAllFaiths(data);
         this.cultures = readAllCultures(data);
@@ -49,8 +52,35 @@ export class Ck3Save implements ICk3Save {
             this.titleKey2Index.set(title.getKey(), index);
         });
         this.dynastyHouses = readDynasties(data, this);
-        this.livingCharacters = data.living || {};
-        this.deadUnprunableCharacters = data.dead_unprunable || {};
+    }
+
+    private createAllCharacters(data: any) {
+        // Create all living characters
+        const livingData = data.living || {};
+        for (const characterId in livingData) {
+            if (Object.prototype.hasOwnProperty.call(livingData, characterId)) {
+                const char = Character.fromRawData(characterId, livingData[characterId], this, this.ck3);
+                this.livingCharacters.set(characterId, char);
+            }
+        }
+        
+        // Create all dead unprunable characters
+        const deadUnprunableData = data.dead_unprunable || {};
+        for (const characterId in deadUnprunableData) {
+            if (Object.prototype.hasOwnProperty.call(deadUnprunableData, characterId)) {
+                const char = Character.fromRawData(characterId, deadUnprunableData[characterId], this, this.ck3);
+                this.deadUnprunableCharacters.set(characterId, char);
+            }
+        }
+        
+        // Create all dead prunable characters
+        const deadPrunableData = data.dead_prunable || {};
+        for (const characterId in deadPrunableData) {
+            if (Object.prototype.hasOwnProperty.call(deadPrunableData, characterId)) {
+                const char = Character.fromRawData(characterId, deadPrunableData[characterId], this, this.ck3);
+                this.deadPrunableCharacters.set(characterId, char);
+            }
+        }
     }
 
     public getCK3(): CK3 {
@@ -58,31 +88,29 @@ export class Ck3Save implements ICk3Save {
     }
 
     findDataAndCreateCharacter(data: any, characterId: string): Character | null {
-        const index = parseInt(characterId);
-        let charData = null;
-        if (data.living && data.living[index]) {
-            charData = data.living[index];
-        } else if (data.dead_unprunable && data.dead_unprunable[index]) {
-            charData = data.dead_unprunable[index];
-        } else if (data.dead_prunable && data.dead_prunable[index]) {
-            charData = data.dead_prunable[index];
+        // Look up from pre-created characters
+        if (this.livingCharacters.has(characterId)) {
+            return this.livingCharacters.get(characterId)!;
+        } else if (this.deadUnprunableCharacters.has(characterId)) {
+            return this.deadUnprunableCharacters.get(characterId)!;
+        } else if (this.deadPrunableCharacters.has(characterId)) {
+            return this.deadPrunableCharacters.get(characterId)!;
         } else {
-            console.warn(`Character with ID ${characterId} not found in living or dead data.`);
+            console.warn(`Character with ID ${characterId} not found in pre-created characters.`);
             return null;
         }
-        const char = Character.fromRawData(characterId, charData, this, this.ck3);
-        this.cachedCharacters.set(characterId, char);
-        return char;
     }
 
     getCharacter(characterId: number) {
-        if (this.cachedCharacters.has("" + characterId)) {
-            return this.cachedCharacters.get("" + characterId)!;
+        const charIdStr = "" + characterId;
+        if (this.livingCharacters.has(charIdStr)) {
+            return this.livingCharacters.get(charIdStr)!;
+        } else if (this.deadUnprunableCharacters.has(charIdStr)) {
+            return this.deadUnprunableCharacters.get(charIdStr)!;
+        } else if (this.deadPrunableCharacters.has(charIdStr)) {
+            return this.deadPrunableCharacters.get(charIdStr)!;
         }
-        return this.findDataAndCreateCharacter({
-            living: this.livingCharacters,
-            dead_unprunable: this.deadUnprunableCharacters,
-        }, "" + characterId,);
+        return null;
     }
 
     getDynastyHouse(houseId: number): DynastyHouse | null {
@@ -92,7 +120,7 @@ export class Ck3Save implements ICk3Save {
         return null;
     }
 
-    public getDynastyHouseAndDynastyData(houseId: number) {
+    getDynastyHouseAndDynastyData(houseId: number) {
         throw new Error("Method not implemented.");
     }
 
@@ -100,7 +128,7 @@ export class Ck3Save implements ICk3Save {
         return this.landedTitles;
     }
 
-    getCurrentIngameDate(): Date {
+    getIngameDate(): Date {
         return this.ingameDate;
     }
 
@@ -140,12 +168,7 @@ export class Ck3Save implements ICk3Save {
 
     getLivingCharactersFiltered(filter: (character: Character) => boolean): Character[] {
         const result = [];
-        for (const charId in this.livingCharacters) {
-            const char = this.getCharacter(parseInt(charId));
-            if (!char) {
-                console.warn("Character with ID " + charId + " unable to be created/found.");
-                continue;
-            }
+        for (const char of this.livingCharacters.values()) {
             if (filter(char)) {
                 result.push(char);
             }

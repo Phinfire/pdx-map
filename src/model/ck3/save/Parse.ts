@@ -139,18 +139,6 @@ export function readLandedTitles(data: any, titleCreator: (titleData: any) => Ab
         }
     }
     return landedTitles;
-    /*
-    const cachedCountyKey2LandedTitle = new Map<string, AbstractLandedTitle>();
-    if (data.landed_titles?.landed_titles) {
-        for (let i of Object.keys(data.landed_titles.landed_titles)) {
-            if (data.landed_titles.landed_titles[i].key && data.landed_titles.landed_titles[i].key.startsWith("c_")) {
-                const key = data.landed_titles.landed_titles[i].key;
-                cachedCountyKey2LandedTitle.set(key, titleCreator(data.landed_titles.landed_titles[i]));
-            }
-        }
-    }
-    return cachedCountyKey2LandedTitle;
-    */
 }
 
 export function createTitle(data: any, save: ICk3Save, ck3: CK3): AbstractLandedTitle {

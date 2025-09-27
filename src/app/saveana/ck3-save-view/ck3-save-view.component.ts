@@ -27,7 +27,7 @@ export class Ck3SaveViewComponent {
 
     ngOnInit() {
         if (this.activeSave) {
-            const dateString = SimplifiedDate.fromDate(this.activeSave.getCurrentIngameDate()).getDateWithShortenedMonthName();
+            const dateString = SimplifiedDate.fromDate(this.activeSave.getIngameDate()).getDateWithShortenedMonthName();
             this.titleService.setTitle(dateString);
             this.rowElements = this.activeSave.getPlayers();
         }

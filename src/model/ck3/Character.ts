@@ -236,7 +236,7 @@ export class Character {
         if (!this.isAlive()) {
             return this.getAgeAtDeath();
         }
-        const currentDate = new Date(this.save.getCurrentIngameDate());
+        const currentDate = new Date(this.save.getIngameDate());
         const birthDate = this.getBirthDate();
         if (currentDate.getMonth() < birthDate.getMonth() || (currentDate.getMonth() == birthDate.getMonth() && currentDate.getDate() < birthDate.getDate())) {
             return currentDate.getFullYear() - birthDate.getFullYear() - 1;

@@ -1,10 +1,11 @@
+import { ParadoxSave } from "../ParadoxSave";
 import { Building } from "./Building";
 import { Country } from "./Country";
 import { CountryBudget } from "./CountryBudget";
 import { Pop } from "./Pop";
 import { PowerBloc } from "./PowerBloc";
 
-export class Vic3Save {
+export class Vic3Save implements ParadoxSave {
 
     public static makeSaveFromRawData(saveData: any) {
         const state2ownerIndex = new Map<number, number>();

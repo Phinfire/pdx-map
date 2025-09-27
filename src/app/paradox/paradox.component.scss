@@ -20,6 +20,29 @@ span {
     margin-left: 0.5em;
 }
 
+.spacer {
+    flex: 1 1 auto;
+}
+
+.spacer-right {
+    width: 1em;
+}
+
+.toolbar-label {
+    margin-left: 6em;
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+.toolbar-action {
+    position: relative;
+    border-radius: 50%;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+}
+
 .container {
     width: 100%;
     flex: 1;
@@ -28,18 +51,17 @@ span {
 }
 
 .container::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="200" fill="%23009736"/><rect x="100" y="0" width="100" height="200" fill="%23FFFFFF"/><rect x="200" y="0" width="100" height="200" fill="%23000000"/><polygon points="0,0 300,0 150,100" fill="%23EE2A35"/></svg>');
-  background-size: cover;
-  filter: brightness(0.4);
-  pointer-events: none;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="200" fill="%23009736"/><rect x="100" y="0" width="100" height="200" fill="%23FFFFFF"/><rect x="200" y="0" width="100" height="200" fill="%23000000"/><polygon points="0,0 300,0 150,100" fill="%23EE2A35"/></svg>');
+    background-size: cover;
+    filter: brightness(0.3);
+    pointer-events: none;
 }
 
 .sidenav {

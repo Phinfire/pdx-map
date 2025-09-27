@@ -12,7 +12,7 @@ export interface ICk3Save {
 
     getPlayers(): Ck3Player[];
 
-    getCurrentIngameDate(): Date;
+    getIngameDate(): Date;
 
     getCharacter(characterId: number): Character | null;
 

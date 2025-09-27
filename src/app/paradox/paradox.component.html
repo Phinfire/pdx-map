@@ -3,6 +3,22 @@
         <mat-icon>menu</mat-icon>
     </button>
     <span>PDX</span>
+    @if (getToolbarLabel()) {
+        <span class="toolbar-label">{{ getToolbarLabel() }}</span>
+    }
+    <span class="spacer"></span>
+    <ng-container *ngFor="let action of getToolbarActionsArray(); trackBy: trackByActionId">
+        <button mat-icon-button 
+                class="toolbar-action" 
+                [@newActionAlert]="getAnimationState(action.id)"
+                (@newActionAlert.done)="onAnimationDone($event, action.id)"
+                [attr.aria-label]="action.tooltip" 
+                [matTooltip]="action.tooltip"
+                (click)="onActionClick(action)">
+            <mat-icon>{{ action.icon }}</mat-icon>
+        </button>
+    </ng-container>
+    <span class="spacer-right"></span>
 </mat-toolbar>
 
 <mat-drawer-container class="container" autosize>
