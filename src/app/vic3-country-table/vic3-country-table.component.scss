@@ -74,7 +74,6 @@ table td:not(:has(img)) {
     padding: 0.5em;
 }
 
-// Only round the bottom corners of the last visible row
 table tr:last-child td:first-child {
     border-bottom-left-radius: 0.5em;
 }
@@ -83,7 +82,6 @@ table tr:last-child td:last-child {
     border-bottom-right-radius: 0.5em;
 }
 
-// Only round the top corners of the first visible row
 table tr:first-child td:first-child {
     border-top-left-radius: 0.5em;
 }
@@ -107,6 +105,8 @@ sub {
     padding: 0.25em;
     border: 1px solid var(--faded-border-color);
     border-radius: 0.5em;
+    display: flex;
+    flex-direction: column;
 }
 
 .col-context-menu-item {

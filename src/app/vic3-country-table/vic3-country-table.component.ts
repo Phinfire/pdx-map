@@ -1,4 +1,5 @@
 import { Component, Input, SimpleChanges, ViewChild } from '@angular/core';
+import { trigger, transition, style, animate } from '@angular/animations';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule, MAT_TOOLTIP_DEFAULT_OPTIONS, MatTooltipDefaultOptions } from '@angular/material/tooltip';
@@ -9,6 +10,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { PlotViewComponent } from '../plot-view/plot-view.component';
 import { TableColumn } from '../../util/table/TableColumn';
 import { Plotable } from '../plot-view/plot/Plotable';
+import { simpleHash } from '../../utils';
+import { MatIconModule } from '@angular/material/icon';
 
 export const myCustomTooltipDefaults: MatTooltipDefaultOptions = {
     showDelay: 0,
@@ -18,14 +21,30 @@ export const myCustomTooltipDefaults: MatTooltipDefaultOptions = {
 
 @Component({
     selector: 'app-table',
-    imports: [CommonModule, MatTableModule, MatSortModule, MatTooltipModule, FormsModule, CdkContextMenuTrigger, CdkMenu, CdkMenuItem, CdkMenuModule],
+    imports: [CommonModule, MatTableModule, MatSortModule, MatTooltipModule, FormsModule, CdkContextMenuTrigger, CdkMenu, CdkMenuItem, CdkMenuModule, MatIconModule],
     templateUrl: './vic3-country-table.component.html',
     styleUrl: './vic3-country-table.component.scss',
     providers: [
         { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: myCustomTooltipDefaults }
     ]
+    ,
+    animations: [
+        trigger('menuFadeScale', [
+            transition(':enter', [
+                style({ opacity: 0, transform: 'scale(0.95)' }),
+                animate('180ms cubic-bezier(0.4,0.0,0.2,1)',
+                    style({ opacity: 1, transform: 'scale(1)' })
+                )
+            ]),
+            transition(':leave', [
+                animate('120ms cubic-bezier(0.4,0.0,0.2,1)',
+                    style({ opacity: 0, transform: 'scale(0.95)' })
+                )
+            ])
+        ])
+    ]
 })
-export class TableComponent<T> {
+export class TableComponent<T> {    
 
     @Input() columns: TableColumn<T>[] = [];
     @Input() rowElements: T[] = [];
@@ -120,7 +139,9 @@ export class TableComponent<T> {
                 try {
                     const value = this.safeGetCellValue(this.selectedColumn!, row, 0);
                     const label = this.safeGetCellValue(hackyNameColumn, row, 0);
-                    const color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                    const labelHash = simpleHash(label || (Math.random() * 16777215).toString());
+                    const zeroOne = (labelHash % 1000) / 1000;
+                    const color = '#' + Math.floor(zeroOne * 16777215).toString(16).padStart(6, '0');
                     return new Plotable(label || 'Unknown', value, color);
                 } catch (error) {
                     console.warn('Error creating plotable for row:', error);
@@ -136,7 +157,11 @@ export class TableComponent<T> {
             const width = 1400;
             const height = 800;
             this.dialog.open(PlotViewComponent, {
-                data: {plotables: Array.from(plotables), plotType: 'bar'},
+                data: {
+                    plotables: Array.from(plotables),
+                    plotType: 'bar',
+                    title: this.selectedColumn.header
+                },
                 panelClass: "popup",
                 width: width + 'px',
                 height: height + 'px'

@@ -35,8 +35,14 @@
 </table>
 
 <ng-template #headermenu>
-  <div class="col-context-menu" cdkMenu>
-    <button class="col-context-menu-item" cdkMenuItem (click)="openPlot()">📊 Plot</button>
-    <button class="col-context-menu-item" cdkMenuItem (click)="downloadCSV()">⬇️ Download CSV</button>
-  </div>
+    <div class="col-context-menu" cdkMenu @menuFadeScale>
+                <button class="col-context-menu-item" cdkMenuItem (click)="openPlot()"
+                                matTooltip="Plot column data" matTooltipPosition="right">
+                        <mat-icon>bar_chart</mat-icon>
+                </button>
+                <button class="col-context-menu-item" cdkMenuItem (click)="downloadCSV()"
+                                matTooltip="Download column as CSV" matTooltipPosition="right">
+                        <mat-icon>download</mat-icon>
+                </button>
+    </div>
 </ng-template>

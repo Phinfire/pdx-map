@@ -18,7 +18,7 @@ export class SimplifiedDate {
     }
 
     constructor(public readonly year: number, public readonly month: number, public readonly day: number) {
-        if (year < 0 || month < 1 || month > 12 || day < 1 || day > 30) {
+        if (year < 0 || month < 1 || month > 12 || day < 1 || day > 31) {
             throw new Error("Invalid date values: " + year + "-" + month + "-" + day);
         }
     }

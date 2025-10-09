@@ -29,7 +29,7 @@ export class PlottingService {
         const margin = {
             top: Math.max(40, Math.ceil(maxImageSize) + 8),
             right: 30,
-            bottom: 130 + (showXAxisTickLabels ? 100 : 0),
+            bottom: 300 + (showXAxisTickLabels ? 100 : 0),
             left: 80
         };
         const chartWidth = width - margin.left - margin.right;
@@ -56,6 +56,7 @@ export class PlottingService {
         this.renderBars(svg, bars, x, y, color, chartHeight);
         this.renderBarImagesAndLabels(svg, bars, x, y, showLabelsWithImages, nativeElement);
         this.injectBarPlotStyles(hostElement);
+        return svgRoot.node();
     }
 
     private addDropShadowFilter(svgRoot: d3.Selection<SVGSVGElement, unknown, null, undefined>) {
@@ -67,9 +68,10 @@ export class PlottingService {
             .attr("width", "140%")
             .attr("height", "140%")
             .append("feDropShadow")
+            // Reduce vertical shadow to avoid overlap with x-axis
             .attr("dx", "4")
-            .attr("dy", "4")
-            .attr("stdDeviation", "6")
+            .attr("dy", "1")
+            .attr("stdDeviation", "4")
             .attr("flood-color", "#000")
             .attr("flood-opacity", "0.7");
     }
@@ -123,7 +125,7 @@ export class PlottingService {
             svg,
             20,
             new DefaultPlotStyle(),
-            10
+            0
         );
         svg.selectAll(".bar")
             .data(bars)
@@ -137,7 +139,7 @@ export class PlottingService {
             .attr("fill", (d, i) => color(String(i)))
             .attr("filter", "url(#drop-shadow)")
             .on('mousemove', function (event, d) {
-                tooltipText = showCursorText(event, tooltipText, d.label, d3.select(this));
+                tooltipText = showCursorText(event, tooltipText, d.label + " (" + d.value + ")", d3.select(this));
             })
             .on('mouseout', function (event, d) {
                 hideCursorText(tooltipText, d3.select(this));
@@ -167,7 +169,7 @@ export class PlottingService {
             svg,
             20,
             new DefaultPlotStyle(),
-            -10
+            0
         );
 
         barImageGroups.each(function (d) {
@@ -231,6 +233,7 @@ export class PlottingService {
         styleElement.text(`
                 .bar {
                     transition: opacity 0.1s ease-in-out;
+                    box-shadow: 0 4px 12px 0 rgba(0,0,0,0.25);
                 }
                 .bar:hover {
                     opacity: 0.7;
@@ -241,9 +244,7 @@ export class PlottingService {
                     font-size: 1rem;
                     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
                     user-select: none;
-                    -webkit-user-select: none;
-                    -moz-user-select: none;
-                    -ms-user-select: none;
+                    font-family: var(--header-font-family), 'Montserrat', 'Titillium Web', 'Inconsolata', monospace, sans-serif;
                 }
                 .bar-image-label {
                     pointer-events: none;
@@ -253,6 +254,7 @@ export class PlottingService {
                     font-weight: bold;
                     text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
                     user-select: none;
+                    font-family: var(--font-family), 'Titillium Web', 'Montserrat', 'Inconsolata', monospace, sans-serif;
                 }
                 image.bar-image-above {
                     rx: 4px;
@@ -262,6 +264,16 @@ export class PlottingService {
                     cursor: pointer;
                     transform-box: fill-box;
                     transform-origin: center;
+                    box-shadow: 0 4px 12px 0 rgba(0,0,0,0.25);
+                }
+                .plot-tooltip {
+                    font-family: 'Inconsolata', monospace, var(--font-family), 'Titillium Web', 'Montserrat', sans-serif;
+                    font-size: 1.1em;
+                    background: var(--lighter-background-color);
+                    color: var(--text-color);
+                    border-radius: 6px;
+                    padding: 0.5em 1em;
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
                 }
             `);
     }
@@ -282,19 +294,7 @@ export class PlottingService {
         const svgRoot = hostElement.append("svg")
             .attr("width", width)
             .attr("height", height);
-        const defs = svgRoot.append("defs");
-        defs.append("filter")
-            .attr("id", "drop-shadow")
-            .attr("x", "-20%")
-            .attr("y", "-20%")
-            .attr("width", "140%")
-            .attr("height", "140%")
-            .append("feDropShadow")
-            .attr("dx", "4")
-            .attr("dy", "4")
-            .attr("stdDeviation", "6")
-            .attr("flood-color", "#000")
-            .attr("flood-opacity", "0.7");
+        // Drop shadow filter removed; use CSS box-shadow for slices
 
         const svg = svgRoot.append("g")
             .attr("transform", `translate(${width / 2}, ${height / 2})`);
@@ -311,8 +311,7 @@ export class PlottingService {
         arcs.append("path")
             .attr("d", arc)
             .attr("fill", (d, i) => color(String(i)))
-            .attr("class", "slice")
-            .attr("filter", "url(#drop-shadow)");
+            .attr("class", "slice"); // Use CSS box-shadow instead
         arcs.append("text")
             .attr("transform", d => {
                 const [x, y] = arc.centroid(d);
@@ -343,6 +342,7 @@ export class PlottingService {
         styleElement.text(`
                 .slice {
                     transition: opacity 0.1s ease-in-out;
+                    box-shadow: 0 4px 12px 0 rgba(0,0,0,0.25);
                 }
                 .slice:hover {
                     opacity: 0.7;
@@ -353,11 +353,19 @@ export class PlottingService {
                     font-size: 1rem;
                     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
                     user-select: none;
-                    -webkit-user-select: none;
-                    -moz-user-select: none;
-                    -ms-user-select: none;
+                    font-family: var(--header-font-family), 'Montserrat', 'Titillium Web', 'Inconsolata', monospace, sans-serif;
+                }
+                .plot-tooltip {
+                    font-family: 'Inconsolata', monospace, var(--font-family), 'Titillium Web', 'Montserrat', sans-serif;
+                    font-size: 1.1em;
+                    background: var(--lighter-background-color);
+                    color: var(--text-color);
+                    border-radius: 6px;
+                    padding: 0.5em 1em;
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
                 }
             `);
+        return svgRoot.node();
     }
 }
 
@@ -365,29 +373,37 @@ export class PlottingService {
 function getConfiguredShowCursorText(viewport: HTMLElement, plot: any, fontSizeInPx: number, style: any, yOffset: number): [(event: MouseEvent, text: any, textContent: string, node: any) => d3.Selection<SVGTextElement, unknown, null, undefined>, (text: any, node: any) => void] {
     return [
         (event: MouseEvent, text: any, textContent: string, node: any) => {
-            const cursorPos = [event.clientX, event.clientY];
             text?.remove();
-            // Place tooltip closer to cursor (above and right)
-            const offsetX = 12;
-            const offsetY = -18;
+            const svgElem = (node?.node()?.ownerSVGElement || node?.node()) as SVGSVGElement;
+            let x = 0, y = 0;
+            if (svgElem && svgElem.createSVGPoint) {
+                const pt = svgElem.createSVGPoint();
+                pt.x = event.clientX;
+                pt.y = event.clientY;
+                const ctm = svgElem.getScreenCTM();
+                if (ctm) {
+                    const svgPt = pt.matrixTransform(ctm.inverse());
+                    x = svgPt.x;
+                    y = svgPt.y;
+                }
+            }
             text = plot.append('text')
-                .attr('x', cursorPos[0] - viewport.getBoundingClientRect().left + offsetX)
-                .attr('y', cursorPos[1] - viewport.getBoundingClientRect().top + offsetY)
+                .attr('x', x)
+                .attr('y', y)
                 .text(textContent)
                 .attr('font-size', fontSizeInPx + 'px')
                 .attr('fill', style.getTextColor().toString())
                 .style('text-anchor', 'start')
-                .style('text-shadow', '#000 0px 0px 1px,   #000 0px 0px 1px,   #000 0px 0px 1px,#000 0px 0px 1px,   #000 0px 0px 1px,   #000 0px 0px 1px');
-            // Prevent overflow left/right
-            const textNode = text.node();
-            if (textNode) {
-                const overlapLeft = textNode.getBoundingClientRect().left - viewport.getBoundingClientRect().left;
-                if (overlapLeft < 0) {
-                    text.attr('x', +text.attr('x') - overlapLeft + 2);
-                }
-                const overlapRight = textNode.getBoundingClientRect().right - viewport.getBoundingClientRect().right;
-                if (overlapRight > 0) {
-                    text.attr('x', +text.attr('x') - overlapRight - 2);
+                .style('text-shadow', '#000 0px 0px 1px, #000 0px 0px 1px');
+
+            if (svgElem) {
+                const svgWidth = svgElem.width.baseVal.value || svgElem.clientWidth || 800;
+                const textNode = text.node();
+                if (textNode && textNode.getBBox) {
+                    const bbox = textNode.getBBox();
+                    if (x + bbox.width > svgWidth) {
+                        text.attr('x', Math.max(0, x - bbox.width - 8));
+                    }
                 }
             }
             return text;

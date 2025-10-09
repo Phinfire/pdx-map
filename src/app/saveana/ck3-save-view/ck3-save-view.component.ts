@@ -13,7 +13,7 @@ import { SlabMapViewComponent } from '../../slab-map-view/slab-map-view.componen
 
 @Component({
     selector: 'app-ck3-save-view',
-    imports: [TableComponent, MatTabsModule, SlabMapViewComponent],
+    imports: [TableComponent, MatTabsModule],
     templateUrl: './ck3-save-view.component.html',
     styleUrl: './ck3-save-view.component.scss'
 })
