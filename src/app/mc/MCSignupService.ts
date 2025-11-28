@@ -23,10 +23,10 @@ export class MCSignupService implements OnDestroy {
 
     private readonly endpoints = {
         signup: DiscordAuthenticationService.getApiUrl() + '/signup',
-        getSignup: DiscordAuthenticationService.getApiUrl() + "/getsignup",
-        aggregatedSignups: DiscordAuthenticationService.getApiUrl() + "/signups",
-        registeredUsers: DiscordAuthenticationService.getApiUrl() + "/signedupusernames",
-        moderatorSignups: DiscordAuthenticationService.getApiUrl() + "/moderator/getSignups"
+        getSignup: DiscordAuthenticationService.getApiUrl() + "/signup",
+        aggregatedSignups: DiscordAuthenticationService.getApiUrl() + "/signup/counts",
+        registeredUsers: DiscordAuthenticationService.getApiUrl() + "/signup/users",
+        moderatorSignups: DiscordAuthenticationService.getApiUrl() + "/moderator/signups"
     };
 
     private refreshAggregated$ = new Subject<void>();
@@ -236,7 +236,8 @@ export class MCSignupService implements OnDestroy {
             ...authHeader
         });
 
-        return this.http.delete<any>(this.endpoints.signup, { headers, body: { discordId } }).pipe(
+        const adminUrl = `${DiscordAuthenticationService.getApiUrl()}/admin/signups/${discordId}`;
+        return this.http.delete<any>(adminUrl, { headers }).pipe(
             map((result: any) => {
                 if (result?.success === true) {
                     this.fetchAllSignups(); // Refresh the signups data

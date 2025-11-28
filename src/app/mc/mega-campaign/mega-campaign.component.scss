@@ -19,22 +19,21 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 95%;
-    height: 95%;
-    max-width: 95%;
-    max-height: 95%;
+    width: 85%;
+    height: 85%;
+    max-width: 85%;
+    max-height: 85%;
     box-sizing: border-box;
     overflow: auto;
     padding: 2em;
-    box-shadow: var(--box-shadow);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     border-radius: 0.5em;
     background-color: var(--background-color);
 }
 
 .pseudo-component {
-    height: 100%;
-    width: 100%;
     display: flex;
+    flex-grow: 1;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -49,6 +48,16 @@
     gap: 1em;
     width: 100%;
     padding: 0em 5em;
+}
+
+.button-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 1em;
+    margin-top: 1em;
+    margin-bottom: 1em;
 
     button {
         width: 18em;
@@ -74,7 +83,7 @@ h1 {
     font-family: 'Permanent Marker', cursive;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     text-decoration: underline;
-    margin-top: 2em;
+    margin-top: 1em;
 }
 
 .plot-container {

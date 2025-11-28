@@ -22,6 +22,7 @@ import { DiscordUser } from '../../../model/social/DiscordUser';
 import { Title } from '@angular/platform-browser';
 
 import JSZip from 'jszip';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 enum VIEW {
     ASSIGNMENT_TABLE,
@@ -32,7 +33,7 @@ enum VIEW {
 
 @Component({
     selector: 'app-mega-campaign',
-    imports: [MCSignupComponent, McstartselectComponent, DiscordLoginComponent, MatButtonModule, TableComponent, DiscordLoginComponent, MatIconModule, PlotViewComponent],
+    imports: [MCSignupComponent, McstartselectComponent, DiscordLoginComponent, MatButtonModule, TableComponent, DiscordLoginComponent, MatIconModule, MatTooltipModule, PlotViewComponent],
     templateUrl: './mega-campaign.component.html',
     styleUrl: './mega-campaign.component.scss'
 })
@@ -59,6 +60,7 @@ export class MegaCampaignComponent {
     goBackToPlayerList = () => this.setView(VIEW.ASSIGNMENT_TABLE);
     goToStartSelection = () => this.setView(VIEW.START_SELECTION);
     goToTraitHistogram = () => this.setView(VIEW.PLOT_VIEW);
+    goToSignup = () => this.setView(VIEW.SIGNUP);
 
     setView(view: VIEW) {
         this.currentView = view;
@@ -71,8 +73,10 @@ export class MegaCampaignComponent {
         });
         this.assignmentService.allAssignments$.subscribe(assignments => {
             this.assignments = assignments.sort((a, b) => a.region_key < b.region_key ? -1 : (a.region_key > b.region_key ? 1 : 0));
+            console.log(`Loaded ${this.assignments.length} assignments`);
             if (assignments != null) {
-                this.userAssignment = assignments.find(a => a.user.id === this.authService.getLoggedInUser()!.id) || null;
+                const loggedInUser = this.authService.getLoggedInUser();
+                this.userAssignment = loggedInUser ? assignments.find(a => a.user.id === loggedInUser.id) || null : null;
             }
         });
         combineLatest([this.assignmentService.allAssignments$, this.ck3Service.initializeCK3()]).subscribe(([assignments, ck3]) => {

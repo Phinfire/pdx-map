@@ -37,6 +37,7 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
     @ViewChild(PolygonSelectComponent) polygonSelectComponent!: PolygonSelectComponent;
 
     @Input() campaign?: MegaCampaign;
+    @Input() goBackFunction: (() => void) | null = null;
 
     private readonly MAX_SELECTIONS = 5;
     private _snackBar = inject(MatSnackBar);
@@ -140,6 +141,19 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
                 this.aggregatedSignupsCount = -1;
             }
         });
+
+        const userPicksSub = this.mcSignupService.userPicks$.subscribe({
+            next: (picks: string[]) => {
+                this.dataSource = picks.map((key: string) => ({
+                    key,
+                    name: key
+                }));
+            },
+            error: (err) => {
+                console.error('Failed to load registration:', err);
+            }
+        });
+        this.subsToUnsubFromOnDestroy.push(userPicksSub);
     }
 
     ngOnDestroy() {
@@ -149,19 +163,7 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit() {
-        const userPicksSub = this.mcSignupService.userPicks$.subscribe({
-            next: (picks: string[]) => {
-                this.dataSource = picks.map((key: string) => ({
-                    key,
-                    name: key
-                }));
-                this.dataSource = [...this.dataSource];
-            },
-            error: (err) => {
-                console.error('Failed to load registration:', err);
-            }
-        });
-        this.subsToUnsubFromOnDestroy.push(userPicksSub);
+        // Initialization moved to ngOnInit to avoid ExpressionChangedAfterItHasBeenCheckedError
     }
 
     private launchPolygonSelect(data: SignupAssetsData) {
@@ -177,7 +179,7 @@ export class MCSignupComponent implements OnInit, AfterViewInit {
             this.polygonSelectComponent.setLockedState(reprKey, true, false);
         }
         const stats = this.signupAssetsService.getMeshStatistics(data.meshes);
-        console.log(`Loaded ${stats.meshCount} polygon meshes with ${stats.triangleCount.toLocaleString()} triangles total`);
+        console.info(`Loaded ${stats.meshCount} polygon meshes with ${stats.triangleCount.toLocaleString()} triangles total`);
     }
 
     drop(event: CdkDragDrop<TableItem[]>) {

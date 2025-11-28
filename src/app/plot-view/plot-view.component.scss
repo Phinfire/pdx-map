@@ -8,6 +8,26 @@
     padding: 1em;
     width: 100%;
     height: 100%;
+    overflow: auto;
+}
+
+.plot-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.plot-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex: 1;
+    overflow: auto;
 }
 
 ::ng-deep .mat-mdc-menu-panel {

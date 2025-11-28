@@ -1,25 +1,44 @@
 import { Injectable } from '@angular/core';
-import { map, Observable, of } from 'rxjs';
+import { map, Observable, of, catchError } from 'rxjs';
 import { MegaCampaign } from './MegaCampaign';
 import { CustomRulerFile } from '../../services/gamedata/CustomRulerFile';
 import { Trait } from '../../model/ck3/Trait';
 import { TraitType } from '../../model/ck3/enum/TraitType';
+import { HttpClient } from '@angular/common/http';
+import { DiscordAuthenticationService } from '../../services/discord-auth.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class MegaService {
+    private readonly campaignsEndpoint = `${DiscordAuthenticationService.getApiUrl()}/megacampaigns`;
 
-    getAvailableCampaigns$() {
-        return of([
-            //new MegaCampaign("Dummy Campaign", new Date('2025-09-05T00:00:00'),new Date('2025-09-19T23:59:59'),new Date('2025-09-21T18:30:00'), null),
-            new MegaCampaign("2nd", new Date('2025-09-12T23:00:00'), new Date('2025-09-19T23:59:59'), new Date('2025-09-21T18:30:00'), null)
-        ]);
+    constructor(private http: HttpClient) {}
+
+    getAvailableCampaigns$(): Observable<MegaCampaign[]> {
+        return this.http.get<any[]>(this.campaignsEndpoint).pipe(
+            map(campaigns => campaigns.map(c => 
+                new MegaCampaign(
+                    c.name,
+                    new Date(c.regionDeadlineDate),
+                    new Date(c.startDeadlineDate),
+                    new Date(c.firstSessionDate),
+                    c.firstEu4Session ? new Date(c.firstEu4Session) : null
+                )
+            )),
+            catchError(() => {
+                console.warn('MegaService: Failed to fetch campaigns from backend, returning empty list');
+                return of([]);
+            })
+        );
     }
 
     getCurrentCampaign$(): Observable<MegaCampaign | null> {
         return this.getAvailableCampaigns$().pipe(
-            map(campaigns => campaigns[0])
+            map(campaigns => campaigns.length > 0 
+                ? campaigns.reduce((mostRecent, current) => 
+                    current.getFirstSessionDate() > mostRecent.getFirstSessionDate() ? current : mostRecent)
+                : null)
         );
     }
     

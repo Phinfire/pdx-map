@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { Component, OnInit, ElementRef, Inject, inject, Input, Optional } from '@angular/core';
+import { Component, OnInit, ElementRef, Inject, inject, Input, Optional, OnChanges, SimpleChanges, AfterViewInit } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Plotable } from './plot/Plotable';
 import { PlottingService } from './PlottingService';
@@ -13,7 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
     templateUrl: './plot-view.component.html',
     styleUrl: './plot-view.component.scss'
 })
-export class PlotViewComponent {
+export class PlotViewComponent implements OnInit, OnChanges, AfterViewInit {
 
     plottingService = inject(PlottingService);
 
@@ -21,6 +21,7 @@ export class PlotViewComponent {
     plotType: string | null = null;
     title: string | null = null;
     previousPlot: SVGSVGElement | null = null;
+    private isFromDialog = false;
 
     @Input() plotablesInput: Plotable[] = [];
 
@@ -85,7 +86,14 @@ export class PlotViewComponent {
             this.plotables = data.plotables.sort((a, b) => b.value - a.value);
             this.plotType = data.plotType;
             this.title = data.title;
+            this.isFromDialog = true;
         } else {
+            this.plotables = this.plotablesInput;
+        }
+    }
+
+    ngOnInit() {
+        if (!this.isFromDialog && this.plotablesInput && this.plotablesInput.length > 0) {
             this.plotables = this.plotablesInput;
         }
     }
@@ -94,8 +102,8 @@ export class PlotViewComponent {
         this.redrawPlot();
     }
 
-    ngOnChanges() {
-        if (this.plotablesInput) {
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes['plotablesInput'] && this.plotablesInput && this.plotablesInput.length > 0) {
             this.plotables = this.plotablesInput;
             this.plotType = null;
             this.redrawPlot();
@@ -107,11 +115,15 @@ export class PlotViewComponent {
             this.previousPlot.remove();
         }
         if (this.elementRef && this.elementRef.nativeElement) {
-            if (this.plotables && this.plotables.length > 0) {
+            const plotContainer = this.elementRef.nativeElement.querySelector('.plot-container');
+            if (plotContainer && this.plotables && this.plotables.length > 0) {
                 if (this.plotType === 'bar') {
-                    this.previousPlot = this.plottingService.drawBarPlot(this.plotables, this.elementRef.nativeElement, false, true);
+                    this.previousPlot = this.plottingService.drawBarPlot(this.plotables, plotContainer, false, true);
                 } else if (this.plotType === 'pie') {
-                    this.previousPlot = this.plottingService.pieChart(this.plotables, this.elementRef.nativeElement);
+                    this.previousPlot = this.plottingService.pieChart(this.plotables, plotContainer);
+                } else {
+                    // Default to bar chart if no plotType specified
+                    this.previousPlot = this.plottingService.drawBarPlot(this.plotables, plotContainer, false, true);
                 }
             }
         } else {

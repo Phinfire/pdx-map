@@ -15,9 +15,9 @@ export class AssignmentService implements OnDestroy {
     http = inject(HttpClient);
 
     private readonly endpoints = {
-        setMyStartingPosition: `${DiscordAuthenticationService.getApiUrl()}/user/setMyStartingPosition`,
-        getAllRegionAssignments: `${DiscordAuthenticationService.getApiUrl()}/user/getAllRegionAssignments`,
-        setAssignments: `${DiscordAuthenticationService.getApiUrl()}/moderator/updateAssignments`
+        setMyStartingPosition: `${DiscordAuthenticationService.getApiUrl()}/user/startingPosition`,
+        getAllRegionAssignments: `${DiscordAuthenticationService.getApiUrl()}/assignments`,
+        setAssignments: `${DiscordAuthenticationService.getApiUrl()}/moderator/assignments`
     };
 
     private refreshAssignments$ = new Subject<void>();
@@ -31,13 +31,7 @@ export class AssignmentService implements OnDestroy {
     constructor() {
         this.mcSignupService.getAllRegisteredUser$().subscribe(users => {
             this.loadedUsers = users;
-            this.discordAuthService.loggedInUser$.subscribe(user => {
-                if (user) {
-                    this.fetchAllAssignments();
-                } else {
-                    this._allAssignments$.next([]);
-                }
-            });
+            this.fetchAllAssignments();
         });
     }
 
@@ -98,12 +92,7 @@ export class AssignmentService implements OnDestroy {
     }
 
     private fetchAllAssignments(): void {
-        const headers = this.getAuthenticatedHeaders();
-        if (!headers) {
-            this._allAssignments$.next([]);
-            return;
-        }
-        this.http.get<any>(this.endpoints.getAllRegionAssignments, { headers }).pipe(
+        this.http.get<any>(this.endpoints.getAllRegionAssignments).pipe(
             map((result: any) => {
                 if (Array.isArray(result?.assignments)) {
                     return result.assignments.map((a: any) => {

@@ -8,6 +8,7 @@ export interface ApiHealth {
     timestamp: string;
     uptime: number;
     dbIsUp: boolean;
+    role: string | null;
 }
 
 interface AuthResponse {
@@ -23,19 +24,19 @@ interface HealthResponse {
     timestamp: string;
     uptime: number;
     db_up: boolean;
+    user_role: string | null;
 }
 
 @Injectable({
     providedIn: 'root'
 })
 export class DiscordAuthenticationService {
-    //public static readonly API_URL = "https://codingafterdark.de/mc-signup";
-    //public static readonly API_URL = "http://localhost:3000/api";
     private static readonly CONFIG = {
-        API_URL: "https://codingafterdark.de/mc-signup",
+        //API_URL: "https://codingafterdark.de/mc-signup",
+        API_URL: "http://localhost:3000/api",
         CLIENT_ID: "1403891748371038462",
         JWT_STORAGE_KEY: "discordToken",
-        HEALTH_CHECK_INTERVAL: 30000,
+        HEALTH_CHECK_INTERVAL: 3000,
         DISCORD_OAUTH_URL: "https://discord.com/api/oauth2/authorize"
     };
 
@@ -78,6 +79,10 @@ export class DiscordAuthenticationService {
         });
     }
 
+    getAuthenticationHeader(): Record<string, string> {
+        return this.jwt ? { Authorization: `Bearer ${this.jwt}` } : {};
+    }
+
     private updateUserState(user: DiscordUser | null): void {
         this.loggedInUser = user;
         this._loggedInUser$.next(user);
@@ -91,8 +96,8 @@ export class DiscordAuthenticationService {
                 catchError(() => of(null)),
                 tap(health => {
                     const isOnline = health !== null;
+                    console.log(`API is ${isOnline ? 'online' : 'offline'} user role: ${health?.role ?? 'N/A'}`);
                     this._isOnline$.next(isOnline);
-                    
                     if (!isOnline && this.loggedInUser) {
                         this.updateUserState(null);
                     }
@@ -101,17 +106,23 @@ export class DiscordAuthenticationService {
             .subscribe();
     }
 
-    getAuthenticationHeader(): Record<string, string> {
-        return this.jwt ? { Authorization: `Bearer ${this.jwt}` } : {};
-    }
-
     private getHealth$(): Observable<ApiHealth | null> {
-        return this.http.get<HealthResponse>(this.endpoints.health)
+        const headers = this.jwt
+            ? new HttpHeaders({
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.jwt}`
+              })
+            : new HttpHeaders({
+                'Content-Type': 'application/json'
+              });
+
+        return this.http.get<HealthResponse>(this.endpoints.health, { headers })
             .pipe(
                 map(data => ({
                     timestamp: data.timestamp,
                     uptime: data.uptime,
-                    dbIsUp: data.db_up
+                    dbIsUp: data.db_up,
+                    role: data.user_role
                 })),
                 catchError(() => of(null))
             );
@@ -223,27 +234,6 @@ export class DiscordAuthenticationService {
                 this.logOut();
                 return of(null);
             })
-        );
-    }
-
-    getHealth(): Observable<ApiHealth | null> {
-        if (!this.jwt) {
-            throw new Error("JWT is null");
-        }
-
-        const authHeader = this.getAuthenticationHeader();
-        const headers = new HttpHeaders({
-            'Content-Type': 'application/json',
-            ...authHeader
-        });
-
-        return this.http.get<HealthResponse>(this.endpoints.health, { headers }).pipe(
-            map(data => ({
-                timestamp: data.timestamp,
-                uptime: data.uptime,
-                dbIsUp: data.db_up
-            })),
-            catchError(() => of(null))
         );
     }
 }
