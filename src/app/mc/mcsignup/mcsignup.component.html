@@ -44,7 +44,7 @@
       </table>
 
       <div cdkDropList (cdkDropListDropped)="drop($event)" class="drop-list">
-        @for (item of dataSource; track item; let i = $index) {
+        @for (item of dataSource; track item.key; let i = $index) {
           <div cdkDrag [cdkDragData]="item"
             class="table-row draggable-row" [cdkDragDisabled]="false" (cdkDragStarted)="onDragStarted($event)"
             (cdkDragEnded)="onDragEnded($event)">
@@ -56,9 +56,9 @@
       </div>
 
       <div class="empty-rows">
-        @for (emptyRow of getEmptyRows(); track emptyRow; let i = $index) {
+        @for (emptyRow of getEmptyRows(); track $index) {
           <div class="table-row empty-row">
-            <div class="rank-cell">{{dataSource.length + i + 1}}</div>
+            <div class="rank-cell">{{dataSource.length + $index + 1}}</div>
             <div class="item-cell">-</div>
           </div>
         }

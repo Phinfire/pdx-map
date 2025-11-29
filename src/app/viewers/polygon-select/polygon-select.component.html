@@ -31,7 +31,7 @@
         @if (customButtons.length > 0) {
             <span class="button-separator"></span>
         }
-        @for (btn of customButtons; track btn.icon) {
+        @for (btn of customButtons; track $index) {
             <button class="corner-button custom" (click)="btn.action(); $event.stopPropagation()" [title]="btn.title" [class.active]="btn.active">
                 <mat-icon>{{ btn.icon }}</mat-icon>
             </button>

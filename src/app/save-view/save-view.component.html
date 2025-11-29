@@ -61,7 +61,7 @@
           </mat-radio-group>
           <label class="radio-group-label">Category</label>
           <mat-radio-group [ngModel]="selectedGoodsCategory" (ngModelChange)="onGoodsCategoryChange($event)">
-            @for (category of availableGoodsCategories; track category) {
+            @for (category of availableGoodsCategories; track category.name) {
               <mat-radio-button [value]="category"
                 style="margin-right: 16px;">
                 {{ category.name }}

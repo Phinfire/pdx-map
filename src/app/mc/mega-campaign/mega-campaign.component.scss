@@ -12,6 +12,18 @@
     justify-content: center;
     overflow-y: auto;
     max-height: 100%;
+
+    @include mat.button-overrides((
+        protected-container-color: var(--mat-sys-primary),
+        protected-label-text-color: var(--background-color),
+        protected-container-height: 2em,
+        protected-horizontal-padding: 24px,
+        protected-label-text-size: 1.2em,
+        protected-label-text-weight: bold,
+        protected-state-layer-color: var(--background-color),
+        protected-hover-container-elevation-shadow: 0 4px 8px rgba(0, 0, 0, 0.3),
+        protected-pressed-container-elevation-shadow: 0 2px 4px rgba(0, 0, 0, 0.2),
+    ));
 }
 
 .main {
@@ -19,13 +31,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 85%;
+    width: 85%; 
     height: 85%;
     max-width: 85%;
     max-height: 85%;
     box-sizing: border-box;
     overflow: auto;
     padding: 2em;
+    gap: 1em;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     border-radius: 0.5em;
     background-color: var(--background-color);
@@ -58,14 +71,6 @@
     gap: 1em;
     margin-top: 1em;
     margin-bottom: 1em;
-
-    button {
-        width: 18em;
-        height: 3em;
-        font-size: 1.4em;
-        font-weight: bold;
-        text-decoration: underline;
-    }
 }
 
 .table-container {

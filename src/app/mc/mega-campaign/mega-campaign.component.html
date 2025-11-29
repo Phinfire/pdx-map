@@ -16,10 +16,10 @@
                 @if (currentView == VIEW.ASSIGNMENT_TABLE) {
                     <h1>{{ campaign.getName() }} Mega Campaign - Start Regions</h1>
                     @if (!isInRegionSignupStage()) {
-                        <button mat-button (click)="goToSignup()" matTooltip="Signups are closed, but you can still view the signup screen">Go back to Signup</button>
+                        <button mat-raised-button (click)="goToSignup()" matTooltip="Signups are closed, but you can still view the signup screen">Go back to Signup</button>
                     }
                     @if (!isInStartSelectionStage()) {
-                        <button mat-button (click)="goToStartSelection()" disabled="!userAssignment"
+                        <button mat-raised-button (click)="goToStartSelection()" disabled="!userAssignment"
                                 [matTooltip]="userAssignment ? 'County Selection is closed, but you can still view the starting county selection screen' : 'You must be assigned a region to select a starting county'">
                             Go back to Starting County Selection
                         </button>
@@ -34,11 +34,11 @@
                     </div>
                     <div class="button-container">
                         @if (!isPlayingCk3()) {
-                        <button mat-flat-button (click)="goToStartSelection()">Select your starting county</button>
+                        <button mat-raised-button (click)="goToStartSelection()">Select your starting county</button>
                     }
-                        <button mat-button (click)="goToTraitHistogram()">View Trait Histogram</button>
+                        <button mat-raised-button (click)="goToTraitHistogram()">View Trait Histogram</button>
                     @if (isInWaitingForFirstSessionStage() || isPlayingCk3()) {
-                        <button mat-button (click)="downloadAllRulersAsZip()">Download All Rulers</button>
+                        <button mat-raised-button (click)="downloadAllRulersAsZip()">Download All Rulers</button>
                     }
                     @if (!authService.isLoggedIn()) {
                     <div class="pseudo-component">
@@ -52,7 +52,7 @@
                     <div class="plot-container">
                         <div class="header-container">
                             <h1>
-                                <button mat-button 
+                                <button mat-raised-button 
                                         class="back-button"
                                         (click)="goBackToPlayerList()"
                                         matTooltip="Go back"

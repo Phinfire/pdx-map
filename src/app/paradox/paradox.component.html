@@ -36,7 +36,7 @@
         </button>
       </div>
     </div>
-    @for (action of sideNavContentProvider.getActions(); track action) {
+    @for (action of sideNavContentProvider.getActions(); track action.label) {
       <button mat-button (click)="action.action()">{{ action.label }}</button>
       <mat-divider></mat-divider>
     }

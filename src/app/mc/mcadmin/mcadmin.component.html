@@ -59,7 +59,7 @@
                     <mat-select-trigger>
                         {{ getSelectedRegionCount() }}
                     </mat-select-trigger>
-                    @for (region of loadedRegions; track region) {
+                    @for (region of loadedRegions; track $index) {
                     <mat-option [value]="region">{{ region }}</mat-option>
                     }
                 </mat-select>

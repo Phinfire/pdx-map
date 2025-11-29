@@ -96,7 +96,6 @@ export class DiscordAuthenticationService {
                 catchError(() => of(null)),
                 tap(health => {
                     const isOnline = health !== null;
-                    console.log(`API is ${isOnline ? 'online' : 'offline'} user role: ${health?.role ?? 'N/A'}`);
                     this._isOnline$.next(isOnline);
                     if (!isOnline && this.loggedInUser) {
                         this.updateUserState(null);

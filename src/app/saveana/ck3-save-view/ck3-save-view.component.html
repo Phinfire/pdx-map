@@ -5,7 +5,7 @@
         </div>
     </mat-tab>
 -->
-    @for (entry of columnMap.entries(); track entry[0]) {
+    @for (entry of columnMap.entries(); track $index) {
     <mat-tab [label]="entry[0]">
         <ng-template matTabContent>
             <div class="table-container">
