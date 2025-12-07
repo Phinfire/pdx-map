@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import * as d3 from 'd3';
 import { Point2D } from '../../util/Point2D';
+import { D3JsService } from '../../services/D3JsService';
 
 export interface DataSeries {
     name: string;
@@ -12,11 +13,12 @@ export interface DataSeries {
     providedIn: 'root'
 })
 export class LinePlotterService {
-    
-    private readonly LABEL_FONT = '"Titillium Web", sans-serif';
+
     private readonly MARKER_SIZE = 8;
     private readonly TRIANGLE_SIZE = 14;
     private readonly AXIS_TEXT_COLOR = 'currentColor';
+
+    private d3jsService = inject(D3JsService);
 
     public redrawChart(dataSeries: DataSeries[], chartContainer: HTMLElement, showDataPoints: boolean): SVGSVGElement {
         if (dataSeries.length === 0) {
@@ -68,14 +70,14 @@ export class LinePlotterService {
             .call(d3.axisBottom(xScale).tickFormat(d3.format('d')))
             .selectAll('text')
             .style('font-size', '14px')
-            .style('font-family', this.LABEL_FONT);
+            .style('font-family', this.d3jsService.getFont());
 
         gSelection.append('g')
             .attr('class', 'y-axis')
             .call(d3.axisLeft(yScale))
             .selectAll('text')
             .style('font-size', '14px')
-            .style('font-family', this.LABEL_FONT);
+            .style('font-family', this.d3jsService.getFont());
 
         const linesGroup = gSelection.append('g').attr('class', 'lines-group');
         const pointsGroup = gSelection.append('g').attr('class', 'points-group').style('pointer-events', 'none');
@@ -123,7 +125,7 @@ export class LinePlotterService {
         const xAxisLabel = hoverGroup.append('text')
             .attr('class', 'hover-triangle-label')
             .style('opacity', 0)
-            .style('font-family', this.LABEL_FONT)
+            .style('font-family', this.d3jsService.getFont())
             .style('font-size', '14px')
             .style('text-anchor', 'middle')
             .style('pointer-events', 'none');
@@ -141,7 +143,7 @@ export class LinePlotterService {
             .attr('class', 'label-text')
             .style('fill', 'black')
             .style('font-size', '14px')
-            .style('font-family', this.LABEL_FONT)
+            .style('font-family', this.d3jsService.getFont())
             .style('pointer-events', 'none');
 
         overlay.on('mousemove', (event: MouseEvent) => {
@@ -193,28 +195,22 @@ export class LinePlotterService {
         mouseX: number,
         mouseY: number
     ): { series: DataSeries; point: { x: number; y: number }; distance: number } | null {
-        const points = series.values;
-        let nearestPoint: { series: DataSeries; point: { x: number; y: number }; distance: number } | null = null;
-        const threshold = 30; // pixels
+        const threshold = 30;
+        const closestPoint = this.d3jsService.findClosestPoint(series.values, mouseX, mouseY, xScale, yScale, threshold);
+        
+        if (!closestPoint) return null;
 
-        // Find the nearest point by pixel distance
-        points.forEach(point => {
-            const pixelX = xScale(point.x);
-            const pixelY = yScale(point.y);
-            const distance = Math.sqrt(
-                Math.pow(pixelX - mouseX, 2) + Math.pow(pixelY - mouseY, 2)
-            );
+        const pixelX = xScale(closestPoint.x);
+        const pixelY = yScale(closestPoint.y);
+        const distance = Math.sqrt(
+            Math.pow(pixelX - mouseX, 2) + Math.pow(pixelY - mouseY, 2)
+        );
 
-            if (distance < threshold && (!nearestPoint || distance < nearestPoint.distance)) {
-                nearestPoint = {
-                    series,
-                    point: { x: point.x, y: point.y },
-                    distance
-                };
-            }
-        });
-
-        return nearestPoint;
+        return {
+            series,
+            point: { x: closestPoint.x, y: closestPoint.y },
+            distance
+        };
     }
 
     private updateMarkerAndLabel(
@@ -285,7 +281,7 @@ export class LinePlotterService {
         width: number
     ): void {
         const value = nearestPoint.point.y;
-        const valueStr = Number.isInteger(value) ? d3.format(',.0f')(value) : d3.format(',.2f')(value);
+        const valueStr = this.d3jsService.formatValue(value);
         const labelText = `${nearestPoint.series.name}: ${valueStr}`;
 
         const textEl = label.select('text')
@@ -293,7 +289,7 @@ export class LinePlotterService {
             .attr('x', 6)
             .attr('y', 14);
 
-        const bbox = (textEl.node() as SVGTextElement).getBBox();
+        const bgRect = this.d3jsService.calculateLabelBackground(textEl.node() as SVGTextElement);
         const bgColor = nearestPoint.series.color;
         const textColor = this.isLightColor(bgColor) ? 'black' : 'white';
         
@@ -301,18 +297,17 @@ export class LinePlotterService {
             .style('fill', textColor);
         
         label.select('rect')
-            .attr('x', bbox.x - 4)
-            .attr('y', bbox.y - 2)
-            .attr('width', bbox.width + 8)
-            .attr('height', bbox.height + 4)
+            .attr('x', bgRect.x)
+            .attr('y', bgRect.y)
+            .attr('width', bgRect.width)
+            .attr('height', bgRect.height)
             .style('fill', bgColor)
             .style('opacity', 0.9);
 
-        const labelX = Math.min(pixelX + 10, width - 150);
-        const labelY = Math.max(pixelY - 30, 0);
+        const labelPos = this.d3jsService.positionTooltip(pixelX, pixelY, 150, bgRect.height, width, 400);
 
         label
-            .attr('transform', `translate(${labelX},${labelY})`)
+            .attr('transform', `translate(${labelPos.x},${labelPos.y})`)
             .style('opacity', 1);
     }
 

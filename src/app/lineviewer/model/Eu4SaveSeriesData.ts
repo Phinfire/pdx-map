@@ -237,6 +237,4 @@ export class Eu4SaveSeriesData implements LineViewerData {
     getOptions(): Map<string, LineAccessor> {
         return this.options;
     }
-
-
 }

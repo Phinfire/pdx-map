@@ -6,6 +6,8 @@ import { MCAdminComponent } from './mc/mcadmin/mcadmin.component';
 import { MegaCampaignComponent } from './mc/mega-campaign/mega-campaign.component';
 import { MCSignupComponent } from './mc/mcsignup/mcsignup.component';
 import { SaveViewSplashComponent } from './save-view-splash/save-view-splash.component';
+import { LineviewerComponent } from './lineviewer/lineviewer.component';
+import { MegaModderComponent } from './mc/mega-modder/mega-modder.component';
 
 export const routes: Routes = [
     {
@@ -15,8 +17,10 @@ export const routes: Routes = [
             { path: 'save', component: SaveViewSplashComponent },
             { path: 'map', component: MapComponent },
             { path: 'lab', component: LabComponent },
+            { path: 'stonks', component: LineviewerComponent },
             { path: 'mc', component: MegaCampaignComponent },
-            { path: 'mc/admin', component: MCAdminComponent }
+            { path: 'mc/admin', component: MCAdminComponent },
+            {path: 'mc/modder', component: MegaModderComponent},
         ]
     }
 ];

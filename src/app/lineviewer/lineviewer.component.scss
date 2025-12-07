@@ -8,10 +8,10 @@
     align-items: center;
     justify-content: center;
     background-color: var(--void-color);
-    
-    @include mat.checkbox-overrides((
-        label-text-size: 16px,
-    ));
+    color: var(--text-color);
+
+    @include mat.checkbox-overrides((label-text-size: 16px,
+        ));
 }
 
 .lineviewer-container {
@@ -32,10 +32,10 @@
 }
 
 .chart-toolbar {
-  padding: 2em 1em;
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
+    padding: 2em 1em;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
 }
 
 .toolbar-spacer {

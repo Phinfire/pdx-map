@@ -1,11 +1,69 @@
 :host {
-    background-color: red;
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    overflow-y: auto;
-    max-height: 100%;
+    justify-content: center;
+    background-color: var(--void-color);
+    color: var(--text-color);
+}
+
+.main {
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    height: 90%;
+    gap: 1em;
+    border-radius: 1em;
+    background-color: var(--background-color);
+    padding-bottom: 1em;
+
+    ::ng-deep mat-tab-group {
+        flex: 1;
+        width: 100%;
+    }
+}
+
+.tab-content {
+    padding: 20px;
+}
+
+.controls-container {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.save-selector {
+    width: 200px;
+}
+
+.sliders-container {
+    flex: 1;
+}
+
+.slider-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 10px;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.slider-label {
+    min-width: 100px;
+}
+
+.slider-control {
+    flex: 1;
+    max-width: 300px;
+}
+
+.slider-value {
+    min-width: 60px;
+    text-align: right;
 }
