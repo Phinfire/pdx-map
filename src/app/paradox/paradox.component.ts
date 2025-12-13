@@ -3,7 +3,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
-
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SideNavContentProvider } from '../SideNavContentProvider';
@@ -178,10 +177,6 @@ export class ParadoxComponent implements OnDestroy {
     }
 
     isActiveRoute(path: string): boolean {
-        // Handle root path
-        if (path === 'save') {
-            return this.currentRoute === '' || this.currentRoute === '/';
-        }
         return this.currentRoute === '/' + path || this.currentRoute === path;
     }
 }

@@ -16,6 +16,7 @@ import { Eu4Save } from '../../model/eu4/Eu4Save';
 import { PdxFileService } from '../../services/pdx-file.service';
 import { SideNavContentProvider } from '../SideNavContentProvider';
 import { SimplifiedDate } from '../../model/common/SimplifiedDate';
+import { MatIconModule } from '@angular/material/icon';
 
 enum FileType {
     CK3 = 'ck3',
@@ -27,7 +28,7 @@ enum FileType {
 
 @Component({
     selector: 'app-save-view-splash',
-    imports: [SaveViewComponent, MatButtonModule, MatProgressSpinnerModule, Ck3SaveViewComponent, MatSelectModule, MatFormFieldModule],
+    imports: [SaveViewComponent, MatButtonModule, MatProgressSpinnerModule, Ck3SaveViewComponent, MatSelectModule, MatFormFieldModule, MatIconModule],
     templateUrl: './save-view-splash.component.html',
     styleUrl: './save-view-splash.component.scss'
 })
@@ -69,6 +70,7 @@ export class SaveViewSplashComponent implements OnDestroy {
     @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
     constructor(private fileService: PdxFileService, private elementRef: ElementRef, http: HttpClient) {
+        /*
         const firstExample = this.referenceSaves[0];
         if (firstExample) {
             this.startProcessing();
@@ -76,6 +78,7 @@ export class SaveViewSplashComponent implements OnDestroy {
                 .then(result => this.handleSuccess(result.save, result.rawData))
                 .catch(error => this.handleError(this.getErrorMessage(error, firstExample.type)));
         }
+        */
     }
 
     activeSaveIsVic3() {

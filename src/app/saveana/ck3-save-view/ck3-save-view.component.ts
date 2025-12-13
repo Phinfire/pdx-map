@@ -9,7 +9,6 @@ import { Character } from '../../../model/ck3/Character';
 import { MatTabsModule } from '@angular/material/tabs';
 import { CK3TableColumnProvider } from '../../../saveana/CK3TableColumnProvider';
 import { SimplifiedDate } from '../../../model/common/SimplifiedDate';
-import { SlabMapViewComponent } from '../../slab-map-view/slab-map-view.component';
 
 @Component({
     selector: 'app-ck3-save-view',

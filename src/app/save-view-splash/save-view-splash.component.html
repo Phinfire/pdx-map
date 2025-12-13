@@ -34,14 +34,18 @@
 }
 }
 @if (activeSave) {
-@if (activeSaveIsVic3()) {
-<app-save-view class="container" [activeSave]="activeSave">
-</app-save-view>
-}
-@if (activeSaveIsCk3()) {
-<app-ck3-save-view [activeSave]="activeSave"></app-ck3-save-view>
-}
-@if (activeSaveIsEu4()) {
-<span>EU4 save file loaded. EU4 save viewing is under development.</span>
-}
+    @if (activeSaveIsVic3()) {
+    <app-save-view class="container" [activeSave]="activeSave">
+    </app-save-view>
+    }
+    @if (activeSaveIsCk3()) {
+    <app-ck3-save-view [activeSave]="activeSave"></app-ck3-save-view>
+    }
+    @if (activeSaveIsEu4()) {
+        <div class="construction-notice">
+            <span>Europa Universalis IV save file detected.</span>
+            <mat-icon>construction</mat-icon>
+            <span>EU4 save analysis is not available yet.</span>
+        </div>
+    }
 }

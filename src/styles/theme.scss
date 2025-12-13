@@ -54,7 +54,7 @@ html {
     --mat-sys-on-secondary-container: var(--text-color);
     
     --mat-sys-outline: var(--border-color);
-    --mat-sys-primary: rgb(0, 180, 0); // was text color
+    --mat-sys-primary: rgb(0, 180, 0);
 }
 
 .light-theme {
@@ -77,7 +77,6 @@ html {
     --mat-sys-secondary-container: var(--lighter-background-color);
     --mat-sys-on-secondary-container: var(--light-theme-text-color);
     --mat-sys-outline: var(--border-color);
-    --mat-sys-primary: var(--light-theme-text-color);
 }
 
 .dark-theme {

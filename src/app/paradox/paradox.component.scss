@@ -14,10 +14,11 @@
             title-text-font: var(--hacker-font)));
     @include mat.icon-overrides((color: var(--text-color)));
     @include mat.sidenav-overrides((container-text-color: var(--text-color)));
-}
-
-span {
-    margin-left: 0.5em;
+    @include mat.button-overrides((protected-label-text-size: 1.4em,
+            protected-container-height: 48px,
+            protected-horizontal-padding: 20px,
+        ));
+    @include mat.sidenav-overrides((content-background-color: var(--void-color)));
 }
 
 .spacer {
@@ -50,6 +51,7 @@ span {
     flex-direction: column;
 }
 
+/*
 .container::before {
     content: "";
     position: absolute;
@@ -65,24 +67,71 @@ span {
     pointer-events: none;
     box-shadow: inset 0 0 30px black;
 }
+*/
 
 .sidenav {
     padding: 1em;
     padding-top: 2em;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    border-right: 1px solid var(--faded-border-color);
-    border-top: 1px solid var(--faded-border-color);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-.sidenav-content {
-    padding-top: 1em;
+.sidenav-top {
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding-bottom: 4em;
+}
+
+.sidenav-content {
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    gap: 1em;
+}
+
+.nav-buttons-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.nav-button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 16px 20px;
+    width: 100%;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+
+    &:hover:not([disabled]) {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    &[disabled] {
+        background-color: var(--background-color);
+
+        .nav-icon {
+            opacity: 0.5;
+        }
+    }
+
+    .nav-icon {
+        margin-right: 16px;
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        flex-shrink: 0;
+    }
+
+    .nav-label {
+        font-size: 18px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
 }
 
 .menu-button {
@@ -102,13 +151,6 @@ span {
     &:hover {
         background-color: var(--faded-border-color);
     }
-}
-
-.sidenav-top {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 
 .panorama {
@@ -164,4 +206,5 @@ span {
     flex-grow: 1;
     height: 100%;
     overflow: hidden;
+    background-color: var(--void-color);
 }

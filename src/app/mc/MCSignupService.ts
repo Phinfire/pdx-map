@@ -1,8 +1,8 @@
 
-import { Injectable, OnDestroy } from "@angular/core";
-import { Observable, throwError, from, of, EMPTY, BehaviorSubject, Subject, merge, Subscription } from 'rxjs';
-import { switchMap, catchError, map } from 'rxjs/operators';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, OnDestroy } from "@angular/core";
+import { BehaviorSubject, merge, Observable, of, Subject, Subscription } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { DiscordUser } from "../../model/social/DiscordUser";
 import { DiscordAuthenticationService } from "../../services/discord-auth.service";
 // Removed duplicate import
@@ -65,13 +65,6 @@ export class MCSignupService implements OnDestroy {
 
     public refetchAggregatedRegistrations() {
         this.refreshAggregated$.next();
-    }
-
-    /**
-     * @deprecated Use refetchAggregatedRegistrations() instead for consistency with other refetch methods
-     */
-    refreshAggregatedRegistrations$() {
-        this.refetchAggregatedRegistrations();
     }
 
     registerUserPicks$(picks: string[]): Observable<any> {
@@ -188,37 +181,6 @@ export class MCSignupService implements OnDestroy {
             map((result: any) => {
                 return Array.isArray(result?.users)
                     ? result.users.map((u: any) => DiscordUser.fromApiJson(u))
-                    : [];
-            }),
-            catchError(() => of([]))
-        );
-    }
-
-    /**
-     * @deprecated Use allSignups$ observable instead. This method will make a fresh HTTP request each time.
-     * The allSignups$ observable automatically updates when authentication state changes.
-     */
-    getAllSignups$(): Observable<Signup[]> {
-        if (!this.discordAuthService.isLoggedIn()) {
-            console.warn('MCSignupService: getAllSignups$ called but user is not logged in.');
-            return of([]);
-        }
-
-        const authHeader = this.discordAuthService.getAuthenticationHeader();
-        const headers = new HttpHeaders({
-            'Content-Type': 'application/json',
-            ...authHeader
-        });
-
-        return this.http.get<any>(this.endpoints.moderatorSignups, { headers }).pipe(
-            map((result: any) => {
-                return Array.isArray(result?.signups)
-                    ? result.signups.map((s: any) => {
-                        return {
-                            discord_id: s.discord_id,
-                            picks: s.picks
-                        };
-                    })
                     : [];
             }),
             catchError(() => of([]))

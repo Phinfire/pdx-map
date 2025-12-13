@@ -5,7 +5,7 @@
     }
 
         @if (isInStartSelectionStage() || isInWaitingForFirstSessionStage() || isPlayingCk3()) {
-            @if (this.assignments.length > 0) {
+            @if (this.assignments.length >= 0) {
                 @if (currentView == VIEW.START_SELECTION && userAssignment) {
                     <app-mcstartselect
                         [campaign]="campaign"
