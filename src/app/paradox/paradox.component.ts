@@ -1,8 +1,8 @@
-import { Component, inject, Renderer2, OnDestroy } from '@angular/core';
+import { Component, inject, Renderer2, OnDestroy, ViewChild, AfterViewInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSidenavModule, MatDrawer } from '@angular/material/sidenav';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SideNavContentProvider } from '../SideNavContentProvider';
@@ -62,7 +62,9 @@ import { trigger, state, style, transition, animate, keyframes } from '@angular/
         ])
     ]
 })
-export class ParadoxComponent implements OnDestroy {
+export class ParadoxComponent implements OnDestroy, AfterViewInit {
+    @ViewChild('drawer') drawer!: MatDrawer;
+    
     isDarkMode = true;
     currentTheme: 'day' | 'night' = this.isDarkMode ? 'night' : 'day';
 
@@ -77,6 +79,10 @@ export class ParadoxComponent implements OnDestroy {
         this.router.events.subscribe(() => {
             this.currentRoute = this.router.url.split('?')[0] || '';
         });
+    }
+
+    ngAfterViewInit(): void {
+        this.drawer.open();
     }
 
     setTheme(darkMode: boolean) {

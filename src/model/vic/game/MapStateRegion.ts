@@ -27,7 +27,6 @@ export class MapStateRegion {
         private uncappedResources: Array<{ type: string; undiscovered_amount: number }> = []
     ) {
         this.tiles = Object.freeze(tiles);
-        // Ensure arable land is always an integer
         this.arableLand = Math.round(arableLand);
     }
 

@@ -52,7 +52,7 @@ export class MegaModderComponent implements AfterViewInit {
     private scaledPopsByTag: Map<string, number> = new Map();
     private scaledArableLandByTag: Map<string, number> = new Map();
     countryResourceMetrics: Map<string, { population: number; arableLand: number; populationPerArableLand: number }> = new Map();
-    private scaledPops: any[] = [];
+    private scaledPops: ModPop[] = [];
     private scaledMapStateRegions: MapStateRegion[] = [];
     totalWorldPopulation: number = 0;
     playerCount: number = 0;
@@ -142,10 +142,8 @@ export class MegaModderComponent implements AfterViewInit {
                 }
             }
             metricsToAggregate.set('arableLand', arableLandByCountry);
-            
             this.countryResourceMetrics = this.service.aggregateCountryMetrics(metricsToAggregate);
-            
-            this.calculateTotalWorldPopulation();
+            this.totalWorldPopulation = this.scaledPops.map(pop => pop.size).reduce((a, b) => a + b, 0);
             this.calculatePlayerCount();
         });
     }
@@ -356,13 +354,6 @@ export class MegaModderComponent implements AfterViewInit {
             }
         }
         return tooltip;
-    }
-
-    private calculateTotalWorldPopulation(): void {
-        this.totalWorldPopulation = 0;
-        for (const row of this.mappingTableRows) {
-            this.totalWorldPopulation += this.computeScaledTotal(row);
-        }
     }
 
     private calculatePlayerCount(): void {

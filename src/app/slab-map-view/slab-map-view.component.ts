@@ -21,6 +21,9 @@ export class SlabMapViewComponent {
     @Input() viewModes: ViewMode<any>[] = [];
     @Input() colorConfigProviders: ColorConfigProvider[] = [];
     @Input() behaviorConfig: BehaviorConfigProvider = new BehaviorConfigProvider(0.75);
+    @Input() selectionCallback: (key: string) => void = (key: string) => {
+        this.polygonSelectComponent.setLockedState(key, false, false);
+    };
     @ViewChild('polygonSelect') polygonSelectComponent!: PolygonSelectComponent;
 
     key2Province: Map<string, any> = new Map<string, any>();
@@ -31,26 +34,23 @@ export class SlabMapViewComponent {
 
     getCustomButtons() {
         return this.viewModes.length > 1 ? [
-        {
-            icon: 'arrow_forward',
-            title: 'Next view mode',
-            action: () => {
-                if (this.viewModes.length > 1) {
-                    const currentIndex = this.viewModes.indexOf(this.currentViewMode!);
-                    const nextIndex = (currentIndex + 1) % this.viewModes.length;
-                    this.currentViewMode = this.viewModes[nextIndex];
-                    this.currentTooltipProvider = this.currentViewMode.getTooltip();
-                    this.polygonSelectComponent.colorConfigProvider = this.colorConfigProviders[nextIndex];
-                    this.polygonSelectComponent.refreshAllColors();
+            {
+                icon: 'arrow_forward',
+                title: 'Next view mode',
+                action: () => {
+                    if (this.viewModes.length > 1) {
+                        const currentIndex = this.viewModes.indexOf(this.currentViewMode!);
+                        const nextIndex = (currentIndex + 1) % this.viewModes.length;
+                        this.currentViewMode = this.viewModes[nextIndex];
+                        this.currentTooltipProvider = this.currentViewMode.getTooltip();
+                        this.polygonSelectComponent.colorConfigProvider = this.colorConfigProviders[nextIndex];
+                        this.polygonSelectComponent.refreshAllColors();
+                    }
                 }
             }
-        }
-    ] : [];
+        ] : [];
     }
 
-    selectionCallback = (key: string) => {
-        this.polygonSelectComponent.setLockedState(key, false, false);
-    }
     meshBuddiesProvider: (key: string) => string[] = (key: string) => {
         return [key];
     };

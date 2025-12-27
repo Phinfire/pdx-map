@@ -117,14 +117,10 @@ export class PolygonSelectComponent {
                 this.refreshPolyColor(poly);
             }
         }
-        if (changes['tooltipProvider']) {
-            console.log("Tooltip provider changed");
-        }
     }
 
     public launch(meshes: (THREE.Mesh & { targetZ?: number, locked?: boolean, interactive?: boolean, key: string })[], colorConfigProviders: ColorConfigProvider[], liftConfig: BehaviorConfigProvider = this.liftConfig) {
         if (this.isLaunched) {
-            console.warn("Already launched, ignoring subsequent launch call");
             return;
         }
         this.liftConfig = liftConfig;
