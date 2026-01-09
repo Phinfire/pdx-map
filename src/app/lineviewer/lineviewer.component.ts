@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, inject, AfterViewInit, OnDestroy, ChangeDetectorRef, Input, SimpleChanges } from '@angular/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSelectModule } from '@angular/material/select';
@@ -8,11 +8,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { LinePlotterService, DataSeries } from './LinePlotterService';
 import { Eu4SaveSeriesData } from './model/Eu4SaveSeriesData';
-import { LineViewerData } from './model/LineViewerData';
 import { LineAccessor } from './model/LineAccessor';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { LineableEntity } from './model/LineableEntity';
+import { LineViewerData } from './model/LineViewerData';
 
 interface SeriesWithEntity extends DataSeries {
     entity: LineableEntity;
@@ -25,11 +25,13 @@ interface SeriesWithEntity extends DataSeries {
     styleUrl: './lineviewer.component.scss',
 })
 export class LineviewerComponent implements AfterViewInit, OnDestroy {
+
+    @Input() data: LineViewerData | null = null;
+
     private elementRef = inject(ElementRef);
     private plotterService = inject(LinePlotterService);
     private cdr = inject(ChangeDetectorRef);
-    private data = inject(Eu4SaveSeriesData);
-    
+
     private svgElement: SVGSVGElement | null = null;
     private resizeObserver: ResizeObserver | null = null;
     private resizeTimeout: number | null = null;
@@ -51,7 +53,13 @@ export class LineviewerComponent implements AfterViewInit, OnDestroy {
     }
 
     constructor() {
-        this.optionsList = Array.from(this.data.getOptions().entries());
+        
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes['data'] && this.data) {
+            this.optionsList = Array.from(this.data.getOptions().entries());
+        }
     }
 
     onOptionSelected(optionKey: string) {
@@ -81,7 +89,7 @@ export class LineviewerComponent implements AfterViewInit, OnDestroy {
                 this.resizeTimeout = null;
             }, 150);
         });
-        
+
         this.resizeObserver.observe(chartContainer);
     }
 
@@ -131,7 +139,7 @@ export class LineviewerComponent implements AfterViewInit, OnDestroy {
             const previousState = previousVisibility.get(s.entity);
             s.entity?.setVisible?.(previousState ?? true);
         });
-        
+
         this.cdr.markForCheck();
     }
 

@@ -44,25 +44,25 @@ export class Eu4SaveSeriesData implements LineViewerData {
     private allDumps: Eu4SaveDataFacade[] | null = null;
 
     private readonly options = new Map([
-            ["Total Development", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["total_development"] ?? 0)))],
-            ["Dev with Subjects", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["devWithSubjects"] ?? 0)))],
-            ["Max Manpower", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["max_manpower"] ?? 0)))],
-            ["Dev Clicks", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractTimeSeries((d: CountryData | undefined) => d?.["dev_clicks"] ?? 0))],
-            ["Income (No Subsidies)", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["inc_no_subs"] ?? 0)))],
-            ["Ducats Spent Total", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractDictSumTimeSeries((d: CountryData | undefined) => d?.["ducats_spent"] as any))],
-            ["Ducats Spent on Players", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractDucatsSpentOnPlayersTimeSeries())],
-            ["Battle Casualties", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["battleCasualties"] ?? 0)))],
-            ["Total Casualties", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["total_casualties"] ?? 0)))],
-            ["Casualties Inflicted", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["total_land_units_killed"] ?? 0)))],
-            ["Army Size", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractDictSumTimeSeries((d: CountryData | undefined) => d?.["army_size"] as any))],
-            ["Mana Spent", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => {
-                return d && d["total_mana_spent"] ? d["total_mana_spent"]["s"] ?? 0 : 0;
-            }))],
-            ["Innovativeness", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseFloat(d?.["innovativeness"] ?? 0)))],
-            ["War Score Cost", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["warscore_cost"] ?? 0)))],
-            ["Force Limit", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["FL"] ?? 0)))],
-            ["Provinces Owned", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["provinces"] ?? 0)))],
-        ]);
+        ["Total Development", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["total_development"] ?? 0)))],
+        ["Dev with Subjects", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["devWithSubjects"] ?? 0)))],
+        ["Max Manpower", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["max_manpower"] ?? 0)))],
+        ["Dev Clicks", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractTimeSeries((d: CountryData | undefined) => d?.["dev_clicks"] ?? 0))],
+        ["Income (No Subsidies)", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["inc_no_subs"] ?? 0)))],
+        ["Ducats Spent Total", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractDictSumTimeSeries((d: CountryData | undefined) => d?.["ducats_spent"] as any))],
+        ["Ducats Spent on Players", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractDucatsSpentOnPlayersTimeSeries())],
+        ["Battle Casualties", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["battleCasualties"] ?? 0)))],
+        ["Total Casualties", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["total_casualties"] ?? 0)))],
+        ["Casualties Inflicted", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["total_land_units_killed"] ?? 0)))],
+        ["Army Size", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractDictSumTimeSeries((d: CountryData | undefined) => d?.["army_size"] as any))],
+        ["Mana Spent", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => {
+            return d && d["total_mana_spent"] ? d["total_mana_spent"]["s"] ?? 0 : 0;
+        }))],
+        ["Innovativeness", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseFloat(d?.["innovativeness"] ?? 0)))],
+        ["War Score Cost", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["warscore_cost"] ?? 0)))],
+        ["Force Limit", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["FL"] ?? 0)))],
+        ["Provinces Owned", () => this.buildSeriesMap((cf: CountryDataFacade) => cf.extractNumericTimeSeries((d: CountryData | undefined) => parseInt(d?.["provinces"] ?? 0)))],
+    ]);
 
     constructor() {
         this.playerData$ = this.apiService.getPlayerData();

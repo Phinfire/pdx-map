@@ -4,6 +4,7 @@ export class Building {
 
     public static fromRawData(rawData: any, allBuildingsData: any[], allOwnershipsData: any[], state2OwnerCountry: Map<number, number>): Building[] {
         const { goodsIn, goodsOut } = this.setupGoodMaps(rawData);
+        console.log("Building goodsIn:", goodsIn, "goodsOut:", goodsOut, rawData);
         const location = rawData["state"];
         const locationCountryIndex = state2OwnerCountry.get(location);
         const buildings = [];

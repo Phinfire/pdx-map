@@ -5,7 +5,7 @@ import { catchError, tap, map, switchMap } from 'rxjs/operators';
 import { DiscordAuthenticationService } from '../services/discord-auth.service';
 import * as pako from 'pako';
 
-export interface SaveFileListResponse {
+export interface FileListResponse {
     id: string;
     user_id: string;
     metadata: Record<string, any>;
@@ -14,7 +14,7 @@ export interface SaveFileListResponse {
     size: number;
 }
 
-export interface SaveFileDownloadResponse {
+export interface FileDownloadResponse {
     id: string;
     user_id: string;
     metadata: Record<string, any>;
@@ -24,7 +24,7 @@ export interface SaveFileDownloadResponse {
     size: number;
 }
 
-export interface SaveFileUploadResponse {
+export interface FileUploadResponse {
     id: string;
     user_id: string;
     metadata: Record<string, any>;
@@ -32,7 +32,7 @@ export interface SaveFileUploadResponse {
     size: number;
 }
 
-export interface SaveFileUpdateResponse {
+export interface FileUpdateResponse {
     id: string;
     user_id: string;
     metadata: Record<string, any>;
@@ -40,7 +40,7 @@ export interface SaveFileUpdateResponse {
     size: number;
 }
 
-export interface SaveFileDeleteResponse {
+export interface FileDeleteResponse {
     success: boolean;
     id: string;
 }
@@ -48,11 +48,11 @@ export interface SaveFileDeleteResponse {
 @Injectable({
     providedIn: 'root',
 })
-export class SaveDatabaseService {
+export class DataStorageService {
     private readonly API_URL = 'https://codingafterdark.de/skanderbeg/savefiles';
 
-    private readonly _saveFiles$ = new BehaviorSubject<SaveFileListResponse[]>([]);
-    public readonly saveFiles$ = this._saveFiles$.asObservable();
+    private readonly _files$ = new BehaviorSubject<FileListResponse[]>([]);
+    public readonly files$ = this._files$.asObservable();
 
     private http = inject(HttpClient);
     private authService = inject(DiscordAuthenticationService);
@@ -74,58 +74,40 @@ export class SaveDatabaseService {
         return pako.ungzip(compressedData);
     }
 
-    listSaveFiles(): Observable<SaveFileListResponse[]> {
-        return this.http.get<SaveFileListResponse[]>(this.API_URL).pipe(
-            tap(saveFiles => this._saveFiles$.next(saveFiles)),
+    listFiles(): Observable<FileListResponse[]> {
+        return this.http.get<FileListResponse[]>(this.API_URL).pipe(
+            tap(files => this._files$.next(files)),
             catchError(error => {
-                console.error('Failed to list save files:', error);
+                console.error('Failed to list files:', error);
                 return of([]);
             })
         );
     }
 
-    downloadSaveFile(savefileId: string): Observable<Uint8Array> {
-        return this.http.get<SaveFileDownloadResponse>(
-            `${this.API_URL}/${savefileId}`
+    downloadFile(fileId: string): Observable<Uint8Array> {
+        return this.http.get<FileDownloadResponse>(
+            `${this.API_URL}/${fileId}`
         ).pipe(
             map(response => this.decompressData(response.compressed_data)),
             catchError(error => {
-                console.error(`Failed to download save file ${savefileId}:`, error);
+                console.error(`Failed to download file ${fileId}:`, error);
                 throw error;
             })
         );
     }
 
-    uploadSaveFile(
+    uploadFile(
         file: File,
         metadata: Record<string, any>,
         customId?: string
-    ): Observable<SaveFileUploadResponse> {
+    ): Observable<FileUploadResponse> {
         return from(this.readFileAsArrayBuffer(file)).pipe(
             map(buffer => this.compressData(new Uint8Array(buffer))),
-            switchMap(compressedData => {
-                const formData = new FormData();
-                formData.append('file', new File([compressedData as any], file.name, { type: 'application/octet-stream' }));
-                formData.append('metadata', JSON.stringify(metadata));
-                console.log('Uploading file with metadata:', metadata);
-                if (customId) {
-                    formData.append('id', customId);
-                }
-
-                const headers = new HttpHeaders({
-                    ...this.authService.getAuthenticationHeader()
-                });
-
-                return this.http.post<SaveFileUploadResponse>(this.API_URL, formData, {
-                    headers
-                }).pipe(
-                    tap(() => {
-                        this.listSaveFiles().subscribe();
-                    })
-                );
-            }),
+            switchMap(compressedData =>
+                this.performUpload(compressedData, file.name, metadata, this.API_URL, 'post', customId)
+            ),
             catchError(error => {
-                console.error('Failed to upload save file:', error);
+                console.error('Failed to upload file:', error);
                 throw error;
             })
         );
@@ -140,60 +122,81 @@ export class SaveDatabaseService {
         });
     }
 
-    updateSaveFile(
-        savefileId: string,
+    uploadString(
+        data: string,
+        metadata: Record<string, any>,
+        fileName: string = 'data.txt',
+        customId?: string
+    ): Observable<FileUploadResponse> {
+        const buffer = new TextEncoder().encode(data);
+        const compressedData = this.compressData(buffer);
+        return this.performUpload(compressedData, fileName, metadata, this.API_URL, 'post', customId);
+    }
+
+    updateFile(
+        fileId: string,
         file: File,
         metadata?: Record<string, any>
-    ): Observable<SaveFileUpdateResponse> {
+    ): Observable<FileUpdateResponse> {
         return from(this.readFileAsArrayBuffer(file)).pipe(
             map(buffer => this.compressData(new Uint8Array(buffer))),
-            switchMap(compressedData => {
-                const formData = new FormData();
-                formData.append('file', new File([compressedData as any], file.name, { type: 'application/octet-stream' }));
-                if (metadata) {
-                    formData.append('metadata', JSON.stringify(metadata));
-                }
-
-                const headers = new HttpHeaders({
-                    ...this.authService.getAuthenticationHeader()
-                });
-
-                console.log('Update headers:', headers.keys());
-                console.log('Auth header:', headers.get('Authorization'));
-
-                return this.http.put<SaveFileUpdateResponse>(
-                    `${this.API_URL}/${savefileId}`,
-                    formData,
-                    { headers }
-                ).pipe(
-                    tap(() => {
-                        this.listSaveFiles().subscribe();
-                    })
-                );
-            }),
+            switchMap(compressedData =>
+                this.performUpload(compressedData, file.name, metadata || {}, `${this.API_URL}/${fileId}`, 'put')
+            ),
             catchError(error => {
-                console.error(`Failed to update save file ${savefileId}:`, error);
+                console.error(`Failed to update file ${fileId}:`, error);
                 throw error;
             })
         );
     }
 
-    deleteSaveFile(savefileId: string): Observable<SaveFileDeleteResponse> {
+    private performUpload(
+        compressedData: Uint8Array,
+        fileName: string,
+        metadata: Record<string, any>,
+        url: string,
+        method: 'post' | 'put',
+        customId?: string
+    ): Observable<any> {
+        const formData = new FormData();
+        formData.append('file', new File([compressedData as any], fileName, { type: 'application/octet-stream' }));
+        formData.append('metadata', JSON.stringify(metadata));
+        if (customId) {
+            formData.append('id', customId);
+        }
+
+        const headers = new HttpHeaders({
+            ...this.authService.getAuthenticationHeader()
+        });
+
+        const request$ = method === 'post'
+            ? this.http.post(url, formData, { headers })
+            : this.http.put(url, formData, { headers });
+
+        return request$.pipe(
+            tap(() => this.listFiles().subscribe()),
+            catchError(error => {
+                console.error(`Failed to perform ${method}:`, error);
+                throw error;
+            })
+        );
+    }
+
+    deleteFile(fileId: string): Observable<FileDeleteResponse> {
         const headers = new HttpHeaders({
             'Content-Type': 'application/json',
             ...this.authService.getAuthenticationHeader()
         });
 
-        return this.http.delete<SaveFileDeleteResponse>(
-            `${this.API_URL}/${savefileId}`,
+        return this.http.delete<FileDeleteResponse>(
+            `${this.API_URL}/${fileId}`,
             { headers }
         ).pipe(
             tap(() => {
-                // Refresh the list after successful delete
-                this.listSaveFiles().subscribe();
+                this.listFiles().subscribe();
             }),
             catchError(error => {
-                console.error(`Failed to delete save file ${savefileId}:`, error);
+                console.error(`Failed to delete file ${fileId}:`, error);
                 throw error;
             })
         );

@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { GambaComponent } from './gamba.component';
+import { CampaignLinesComponent } from './campaign-lines.component';
 
-describe('GambaComponent', () => {
-  let component: GambaComponent;
-  let fixture: ComponentFixture<GambaComponent>;
+describe('CampaignLinesComponent', () => {
+  let component: CampaignLinesComponent;
+  let fixture: ComponentFixture<CampaignLinesComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GambaComponent]
+      imports: [CampaignLinesComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(GambaComponent);
+    fixture = TestBed.createComponent(CampaignLinesComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

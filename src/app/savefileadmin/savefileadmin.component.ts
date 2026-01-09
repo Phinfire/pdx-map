@@ -11,7 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { SaveDatabaseService, SaveFileListResponse } from '../savedatabase.service';
+import { DataStorageService, FileListResponse } from '../savedatabase.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -24,14 +24,14 @@ import { takeUntil } from 'rxjs/operators';
 export class SavefileadminComponent implements OnInit, OnDestroy {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
-  private saveService = inject(SaveDatabaseService);
+  private saveService = inject(DataStorageService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private destroy$ = new Subject<void>();
 
-  saveFiles: SaveFileListResponse[] = [];
+  saveFiles: FileListResponse[] = [];
   selectedSaveId: string | null = null;
-  selectedSave: SaveFileListResponse | null = null;
+  selectedSave: FileListResponse | null = null;
   isLoading = false;
   isUploading = false;
   isDeleting = false;
@@ -47,10 +47,10 @@ export class SavefileadminComponent implements OnInit, OnDestroy {
 
     loadSaveFiles(): void {
         this.isLoading = true;
-        this.saveService.listSaveFiles().pipe(
+        this.saveService.listFiles().pipe(
             takeUntil(this.destroy$)
         ).subscribe({
-            next: (files: SaveFileListResponse[]) => {
+            next: (files: FileListResponse[]) => {
                 this.saveFiles = files;
                 this.isLoading = false;
             },
@@ -61,7 +61,7 @@ export class SavefileadminComponent implements OnInit, OnDestroy {
         });
     }
 
-    selectSave(save: SaveFileListResponse): void {
+    selectSave(save: FileListResponse): void {
         this.selectedSaveId = save.id;
         this.selectedSave = save;
     }
@@ -106,7 +106,7 @@ export class SavefileadminComponent implements OnInit, OnDestroy {
             duration: 0,
         });
 
-        this.saveService.uploadSaveFile(file, metadata).pipe(
+        this.saveService.uploadFile(file, metadata).pipe(
             takeUntil(this.destroy$)
         ).subscribe({
             next: () => {
@@ -134,7 +134,7 @@ export class SavefileadminComponent implements OnInit, OnDestroy {
         if (!confirm(`Delete save file "${this.selectedSaveId}"?`)) return;
 
         this.isDeleting = true;
-        this.saveService.deleteSaveFile(this.selectedSaveId).pipe(
+        this.saveService.deleteFile(this.selectedSaveId).pipe(
             takeUntil(this.destroy$)
         ).subscribe({
             next: () => {
@@ -156,7 +156,7 @@ export class SavefileadminComponent implements OnInit, OnDestroy {
         if (!confirm(`Delete save file "${saveId}"?`)) return;
 
         this.isDeleting = true;
-        this.saveService.deleteSaveFile(saveId).pipe(
+        this.saveService.deleteFile(saveId).pipe(
             takeUntil(this.destroy$)
         ).subscribe({
             next: () => {

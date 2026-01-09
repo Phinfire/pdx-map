@@ -14,6 +14,7 @@ import { PowerBloc } from "../../model/vic/PowerBloc";
 import { Vic3GameFilesService } from "../../model/vic/Vic3GameFilesService";
 import { AggregatingTableColumn } from "../../util/table/AggregatingTableColumn";
 import { Building } from "../../model/vic/Building";
+import { ImageIconType } from "../../util/table/ImageIconType";
 
 class BuildingAggregatingTableColumn extends AggregatingTableColumn<Country, Building> {
 
@@ -63,7 +64,11 @@ export class Vic3TableColumnProvider {
             (element: Country) => element.getPops().getTotal("pops", (pop: Pop) => true, (pop: Pop) => pop.getSize()),
             (element: Country) => Array.from(element.getPops().getTotalExplanation("pops", (pop: Pop) => true, (pop: Pop) => pop.getSize(), (pop: Pop) => pop.getType()).entries())
                 .map(([name, val]) => `${TableColumn.formatNumber(val).padStart(15, ' ')}  ${name}`)
-                .join('\n')
+                .join('\n'),
+            null,
+            false,
+            "groups",
+            ImageIconType.MATERIAL_ICON
         ),
         new TableColumn<Country>(
             'employed',
@@ -361,7 +366,7 @@ export class Vic3TableColumnProvider {
         return this.baseColumns.concat(this.ecoConnectionsColumns);
     }
 
-    public getGoodColumns(countries: Country[], viewMode: GoodsViewMode, selectedGoodsCategory: GoodCategory): TableColumn<Country>[] {
+    public getGoodColumns(): TableColumn<Country>[] {
         return this.goodColumns;
     }
 
@@ -400,7 +405,6 @@ export class Vic3TableColumnProvider {
                                 return country.getGoodOut(good.index) - country.getGoodIn(good.index);
                             })
                             .reduce((a, b) => a + b, 0);
-
                         return good.category === selectedGoodsCategory && total > 0;
                     })
                     .map(good => new TableColumn<Country>(

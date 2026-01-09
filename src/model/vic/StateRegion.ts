@@ -36,19 +36,21 @@ export class StateRegion {
         );
     }
 
+    public static fromJson(json: any): StateRegion {
+        return new StateRegion(
+            json.indexInSaveFile,
+            json.stateName,
+            json.ownerCountryIndex,
+            json.infrastructure,
+            json.infrastructureUsage,
+            json.wage,
+            PopulationStatBlock.fromJson(json.populationStatBlock)
+        );
+    }
+
     constructor(private indexInSaveFile: number, private stateName: string, private ownerCountryIndex: number, private infrastructure: number, private infraStructureUsage: number,
         private wage: number, private populationStatBlock: PopulationStatBlock
-    ) {
-
-    }
-
-    getOwnerCountryIndex() {
-        return this.ownerCountryIndex;
-    }
-
-    getIndexInSaveFile() {
-        return this.indexInSaveFile;
-    }
+    ) { }
 
     toJson() {
         return {
@@ -60,5 +62,13 @@ export class StateRegion {
             "wage": this.wage,
             "populationStatBlock": this.populationStatBlock.toJson()
         };
+    }
+
+    getOwnerCountryIndex() {
+        return this.ownerCountryIndex;
+    }
+
+    getIndexInSaveFile() {
+        return this.indexInSaveFile;
     }
 }

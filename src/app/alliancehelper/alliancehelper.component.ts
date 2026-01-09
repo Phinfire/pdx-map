@@ -14,7 +14,7 @@ import { takeUntil, switchMap, catchError, map } from 'rxjs/operators';
 import { MegaService } from '../mc/MegaService';
 import { TableColumn } from '../../util/table/TableColumn';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { SaveDatabaseService } from '../savedatabase.service';
+import { DataStorageService } from '../savedatabase.service';
 
 interface Nation {
     key: string;
@@ -40,7 +40,7 @@ export class AlliancehelperComponent implements OnInit, OnDestroy {
     private service = inject(MegaModderE2VService);
     private vic3GameFilesService = inject(Vic3GameFilesService);
     private countryShellBuilder = inject(CountryShellBuilderService);
-    private saveDatabase = inject(SaveDatabaseService);
+    private saveDatabase = inject(DataStorageService);
     private destroy$ = new Subject<void>();
     protected appReady = false;
     private LOCAL_STORAGE_KEY = 'alliancehelper.selectedNations';
@@ -64,7 +64,7 @@ export class AlliancehelperComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.megaService.getLastEu4Save().pipe(takeUntil(this.destroy$)).subscribe(save => {
             const demographicsObservable = this.saveFileId
-                ? this.saveDatabase.downloadSaveFile(this.saveFileId).pipe(
+                ? this.saveDatabase.downloadFile(this.saveFileId).pipe(
                     map(data => {
                         const jsonStr = new TextDecoder().decode(data);
                         return JSON.parse(jsonStr);

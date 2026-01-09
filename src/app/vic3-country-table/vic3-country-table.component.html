@@ -5,7 +5,20 @@
         [matTooltip]="col.tooltip" matTooltipClass="tooltip" [cdkContextMenuTriggerFor]="headermenu"
         (cdkContextMenuOpened)="selectedColumn = col">
         @if (col.headerImage) {
-          <img [src]="col.headerImage" alt="" style="max-height:1.4em;vertical-align:middle;" />
+          @switch (col.headerImageType) {
+            @case (0) {
+              <img [src]="col.headerImage" alt="" style="max-height:1.4em;vertical-align:middle;" />
+            }
+            @case (1) {
+              <mat-icon>{{ col.headerImage }}</mat-icon>
+            }
+            @case (2) {
+              <mat-icon fontSet="material-symbols-outlined">{{ col.headerImage }}</mat-icon>
+            }
+            @default {
+              <img [src]="col.headerImage" alt="" style="max-height:1.4em;vertical-align:middle;" />
+            }
+          }
         } @else {
           {{col.header}}
         }

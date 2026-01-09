@@ -250,12 +250,13 @@ export class Vic3GameFilesService {
 
     private parseGoodsList(data: string): Promise<Good[]> {
         return this.fileService.importFilePromise(new File([data], "00_goods.txt")).then(value => {
+            let index = 0;
             return Object.entries(value.json).map(([key, entry]: any) => {
                 const category = Object.values(GoodCategory).find(cat => cat.key === entry.category);
                 if (!category) {
                     throw new Error(`Unknown good category: ${entry.category} for good ${key}`);
                 }
-                return new Good(key, entry.index, category, entry.locKey);
+                return new Good(key, index++, category, entry.locKey);
             });
         });
     }

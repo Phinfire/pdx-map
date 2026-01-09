@@ -7,7 +7,7 @@ export class SideNavContentProvider {
 
     private handleCounter = 0;
     private actions: Map<string, () => void> = new Map();
-    private toolbarActions: Map<string,{ icon: string, tooltip: string, action: () => void }> = new Map();
+    private toolbarActions: Array<{ id: string, icon: string, tooltip: string, action: () => void, positionFloatWeight: number }> = [];
     private toolbarLabel: string | null = null;
 
     constructor() {
@@ -17,22 +17,24 @@ export class SideNavContentProvider {
         return Array.from(this.actions.entries()).map(([label, action]) => ({ label, action }));
     }
 
-    getToolbarActions() {
+    getToolbarActions(): Array<{ id: string, icon: string, tooltip: string, action: () => void, positionFloatWeight: number }> {
         return this.toolbarActions;
     }
 
-    addToolbarAction(icon: string, tooltip: string, action: () => void) {
-        const handle = `action-${this.handleCounter++}`;
-        this.toolbarActions.set(handle, { icon, tooltip, action });
-        return handle;
+    addToolbarAction(icon: string, tooltip: string, action: () => void, positionFloatWeight: number = 0) {
+        const id = `action-${this.handleCounter++}`;
+        this.toolbarActions.push({ id, icon, tooltip, action , positionFloatWeight });
+        this.toolbarActions.sort((a, b) => a.positionFloatWeight - b.positionFloatWeight);
+        return id;
     }
 
     removeToolbarAction(handle: string) {
-        this.toolbarActions.delete(handle);
+        this.toolbarActions = this.toolbarActions.filter(item => item.id !== handle);
     }
 
     clearToolbarActions() {
-        this.toolbarActions.clear();
+        console.log("Clearing toolbar actions");
+        this.toolbarActions = [];
     }
 
     getToolbarLabel(): string | null {

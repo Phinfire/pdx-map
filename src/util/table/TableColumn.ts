@@ -1,9 +1,10 @@
 import { ITableColumn } from "./ITableColumn";
-
+import { ImageIconType } from "./ImageIconType";
 
 export class TableColumn<T> implements ITableColumn<T> {
 
     public readonly headerImage?: string;
+    public readonly headerImageType?: ImageIconType;
 
     public static getIndexColumn<T>(offset: number = 0): TableColumn<T> {
         return new TableColumn<T>(
@@ -12,7 +13,11 @@ export class TableColumn<T> implements ITableColumn<T> {
             null,
             false,
             (element: T, index: number) => index + 1 + offset,
-            (element: T, index: number) => null
+            (element: T, index: number) => null,
+            null,
+            false,
+            undefined,
+            undefined
         );
     };
 
@@ -29,11 +34,12 @@ export class TableColumn<T> implements ITableColumn<T> {
                 return transformed != null ? column.subscript!(transformed) : "";
             }) : null,
             column.isImage,
-            column.headerImage
+            column.headerImage,
+            column.headerImageType
         );
     }
 
-    public static from<T>(header: string, cellValue: (element: T, index: number) => any, cellTooltip: (element: T, index: number) => string, headerImage?: string) {
+    public static from<T>(header: string, cellValue: (element: T, index: number) => any, cellTooltip: (element: T, index: number) => string, headerImage?: string, headerImageType?: ImageIconType) {
         return new TableColumn<T>(
             header.toLowerCase().replace(/\s+/g, '_'),
             header,
@@ -43,7 +49,8 @@ export class TableColumn<T> implements ITableColumn<T> {
             cellTooltip,
             null,
             headerImage != null,
-            headerImage
+            headerImage,
+            headerImageType
         );
     }
 
@@ -59,10 +66,12 @@ export class TableColumn<T> implements ITableColumn<T> {
         public readonly cellTooltip: (element: T, index: number) => string | null,
         public readonly subscript: ((element: T) => string) | null = null,
         isImage: boolean = false,
-        headerImage?: string
+        headerImage?: string,
+        headerImageType?: ImageIconType
     ) {
         this.isImage = isImage;
         this.headerImage = headerImage;
+        this.headerImageType = headerImageType;
         this.visibleCellValue = (element: T, index: number) => {
             const value = this.cellValue(element, index);
             if (this.isImage) {

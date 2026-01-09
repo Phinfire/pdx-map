@@ -72,9 +72,7 @@ export class GaugeComponent implements AfterViewInit, OnChanges, OnDestroy {
     private renderGauge(): void {
         const container = d3.select(this.gaugeContainer.nativeElement);
         container.selectAll('*').remove();
-        // Measure the container reliably (try several fallbacks) so we don't default to a large fixed width.
         this.gaugeWidth = this.getContainerWidth();
-        console.log('Rendering gauge in container width:', this.gaugeWidth);
         const rootStyle = getComputedStyle(document.documentElement);
         this.primaryColor = (rootStyle.getPropertyValue('--mat-sys-primary') || '').trim() || '#ff9800';
         this.borderColorStr = (rootStyle.getPropertyValue('--border-color') || '').trim() || '#ccc';
@@ -85,7 +83,6 @@ export class GaugeComponent implements AfterViewInit, OnChanges, OnDestroy {
             .attr('height', this.gaugeHeight)
             .attr('viewBox', `0 0 ${this.gaugeWidth + this.padding * 2} ${this.gaugeHeight + this.padding * 2}`)
             .attr('preserveAspectRatio', 'xMidYMid meet');
-
 
         this.gaugeBg = this.gaugeSvg.append('rect')
             .attr('x', this.padding)

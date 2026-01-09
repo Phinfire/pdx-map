@@ -1,5 +1,23 @@
 export class PopulationStatBlock {
 
+    public static fromJson(json: any): PopulationStatBlock {
+        return new PopulationStatBlock(
+            json.lowerStrataPopulation,
+            json.middleStrataPopulation,
+            json.upperStrataPopulation,
+            json.radicals,
+            json.loyalists,
+            json.politicalParticipants,
+            json.salariedWorkforce,
+            json.subsistingWorkforce,
+            json.unemployedWorkforce,
+            json.governmentWorkforce,
+            json.laborerWorkforce,
+            json.wage,
+            json.totalWealth
+        );
+    }
+
     constructor(
         readonly lowerStrataPopulation: number,
         readonly middleStrataPopulation: number,

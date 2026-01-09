@@ -5,9 +5,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule, MatDrawer } from '@angular/material/sidenav';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { SideNavContentProvider } from '../SideNavContentProvider';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
+import { SideNavContentProvider } from '../../ui/SideNavContentProvider';
 
 @Component({
     selector: 'app-paradox',
@@ -64,7 +64,7 @@ import { trigger, state, style, transition, animate, keyframes } from '@angular/
 })
 export class ParadoxComponent implements OnDestroy, AfterViewInit {
     @ViewChild('drawer') drawer!: MatDrawer;
-    
+
     isDarkMode = true;
     currentTheme: 'day' | 'night' = this.isDarkMode ? 'night' : 'day';
 
@@ -103,8 +103,7 @@ export class ParadoxComponent implements OnDestroy, AfterViewInit {
     private animationTimeouts = new Map<string, any>();
 
     getToolbarActionsArray() {
-        const actions = Array.from(this.sideNavContentProvider.getToolbarActions().entries())
-            .map(([id, action]) => ({ ...action, id }));
+        const actions = this.sideNavContentProvider.getToolbarActions();
         actions.forEach(action => {
             if (!this.hasSeenAction(action.id)) {
                 this.triggerNewActionAnimation(action.id);
@@ -177,7 +176,6 @@ export class ParadoxComponent implements OnDestroy, AfterViewInit {
         this.animationTimeouts.clear();
     }
 
-    // Navigation methods
     navigate(path: string): void {
         this.router.navigate([path]);
     }

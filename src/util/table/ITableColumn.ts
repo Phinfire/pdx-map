@@ -1,3 +1,5 @@
+import { ImageIconType } from './ImageIconType';
+
 export interface ITableColumn<T> {
     def: string;
     header: string;
@@ -7,4 +9,5 @@ export interface ITableColumn<T> {
     visibleCellValue: (element: T, index: number) => any;
     cellTooltip: (element: T, index: number) => string | null;
     subscript: ((element: T) => string) | null;
+    headerImageType?: ImageIconType;
 }

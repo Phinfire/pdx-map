@@ -1,89 +1,84 @@
 <div class="content">
-  @if (activeSave != null) {
+    @if (activeSave != null) {
     <span>
-      <div>
-        <span><strong>Save-Date:</strong></span>
-        <span>{{ activeSave.getRealDate().toLocaleDateString() }}</span>
-        <span><strong>Ingame-Date:</strong></span>
-        <span>{{ activeSave.getIngameDate().toLocaleDateString() }}</span>
-      </div>
+        <div>
+            <span><strong>Save-Date:</strong></span>
+            <span>{{ activeSave.getRealDate().toLocaleDateString() }}</span>
+            <span><strong>Ingame-Date:</strong></span>
+            <span>{{ activeSave.getIngameDate().toLocaleDateString() }}</span>
+        </div>
     </span>
-  }
+    }
 </div>
 @if (activeSave != null) {
-  <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)"
-    style="width: 100%;">
+<mat-tab-group [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)" style="width: 100%;">
     <mat-tab label="Countries">
-      @if (selectedTabIndex === 0) {
-        <app-table [rowElements]="getCountries()"
-        [columns]="columnProvider.getCountryColumnList()"></app-table>
-      }
+        @if (selectedTabIndex === 0) {
+        <app-table [rowElements]="getCountries()" [columns]="columnProvider.getCountryColumnList()"></app-table>
+        }
     </mat-tab>
     <mat-tab label="Country Budgets">
-      @if (selectedTabIndex === 1) {
+        @if (selectedTabIndex === 1) {
         <app-table [rowElements]="getCountries()"
-        [columns]="columnProvider.getCountryFinancialColumnList()"></app-table>
-      }
+            [columns]="columnProvider.getCountryFinancialColumnList()"></app-table>
+        }
     </mat-tab>
     <mat-tab label="Blocs">
-      @if (selectedTabIndex === 2) {
+        @if (selectedTabIndex === 2) {
         <app-table [rowElements]="activeSave.getPowerBlocs()"
-        [columns]="columnProvider.getPowerBlocColumnList()"></app-table>
-      }
+            [columns]="columnProvider.getPowerBlocColumnList()"></app-table>
+        }
     </mat-tab>
     <mat-tab label="Building Financials">
-      @if (selectedTabIndex === 3) {
+        @if (selectedTabIndex === 3) {
         <app-table [rowElements]="getCountries()"
-        [columns]="columnProvider.getBuildingFinancialColumnList()"></app-table>
-      }
+            [columns]="columnProvider.getBuildingFinancialColumnList()"></app-table>
+        }
     </mat-tab>
     <mat-tab label="Buildings">
-      @if (selectedTabIndex === 4) {
-        <app-table [rowElements]="getCountries()"
-        [columns]="columnProvider.getBuildingTableColumnList()"></app-table>
-      }
+        @if (selectedTabIndex === 4) {
+        <app-table [rowElements]="getCountries()" [columns]="columnProvider.getBuildingTableColumnList()"></app-table>
+        }
     </mat-tab>
     <mat-tab label="Links">
-      @if (selectedTabIndex === 5) {
-        <app-table [rowElements]="getCountries()"
-        [columns]="columnProvider.getEcoConnectionsColumnList()"></app-table>
-      }
+        @if (selectedTabIndex === 5) {
+        <app-table [rowElements]="getCountries()" [columns]="columnProvider.getEcoConnectionsColumnList()"></app-table>
+        }
     </mat-tab>
     <mat-tab label="Goods">
-      @if (selectedTabIndex === 6) {
+        @if (selectedTabIndex === 6) {
         <div class="table-controls">
-          <label class="radio-group-label">Goods View Mode</label>
-          <mat-radio-group [(ngModel)]="goodsViewMode" (ngModelChange)="onGoodsViewModeChange($event)"
-            aria-label="Goods view mode" style="margin-bottom: 8px;">
-            <mat-radio-button value="input" style="margin-right: 16px;">Input</mat-radio-button>
-            <mat-radio-button value="balance" style="margin-right: 16px;">Balance</mat-radio-button>
-            <mat-radio-button value="output" style="margin-right: 16px;">Output</mat-radio-button>
-          </mat-radio-group>
-          <label class="radio-group-label">Category</label>
-          <mat-radio-group [ngModel]="selectedGoodsCategory" (ngModelChange)="onGoodsCategoryChange($event)">
-            @for (category of availableGoodsCategories; track category.name) {
-              <mat-radio-button [value]="category"
-                style="margin-right: 16px;">
-                {{ category.name }}
-              </mat-radio-button>
-            }
-          </mat-radio-group>
+            <label class="radio-group-label">Goods View Mode</label>
+            <mat-radio-group [(ngModel)]="goodsViewMode" (ngModelChange)="onGoodsViewModeChange($event)"
+                aria-label="Goods view mode" style="margin-bottom: 8px;">
+                <mat-radio-button value="input" style="margin-right: 16px;">Input</mat-radio-button>
+                <mat-radio-button value="balance" style="margin-right: 16px;">Balance</mat-radio-button>
+                <mat-radio-button value="output" style="margin-right: 16px;">Output</mat-radio-button>
+            </mat-radio-group>
+            <label class="radio-group-label">Category</label>
+            <mat-radio-group [ngModel]="selectedGoodsCategory" (ngModelChange)="onGoodsCategoryChange($event)">
+                @for (category of availableGoodsCategories; track category.name) {
+                <mat-radio-button [value]="category" style="margin-right: 16px;">
+                    {{ category.name }}
+                </mat-radio-button>
+                }
+            </mat-radio-group>
         </div>
-      }
-      <!-- <app-table *ngIf="selectedTabIndex === 6" [rowElements]="getCountries()" [columns]="goodColumns"></app-table> -->
+        }
+        @if (selectedTabIndex === 6) {
+        <app-table [rowElements]="getCountries()"
+            [columns]="columnProvider.getGoodColumns()"></app-table>
+        }
     </mat-tab>
     <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon>map</mat-icon>
-      </ng-template>
-      @if (selectedTabIndex === 7) {
-        <app-slab-map-view 
-          [geoJsonFetcher]="geoJsonFetcher"
-          [viewModes]="viewModes"
-          [colorConfigProviders]="colorConfigProviders"
-          [behaviorConfig]="behaviorConfig">
+        <ng-template mat-tab-label>
+            <mat-icon>map</mat-icon>
+        </ng-template>
+        @if (selectedTabIndex === 7) {
+        <app-slab-map-view [geoJsonFetcher]="geoJsonFetcher" [viewModes]="viewModes"
+            [colorConfigProviders]="colorConfigProviders" [behaviorConfig]="behaviorConfig">
         </app-slab-map-view>
-      }
+        }
     </mat-tab>
-  </mat-tab-group>
+</mat-tab-group>
 }

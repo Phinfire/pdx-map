@@ -6,41 +6,39 @@ import { Pop } from "./Pop";
 import { PowerBloc } from "./PowerBloc";
 import { StateRegion } from "./StateRegion";
 
+interface RawSaveData {
+    states: any;
+    pops: any;
+    technology: any;
+    player_manager: any;
+    country_manager: any;
+    power_bloc_manager: any;
+    building_manager: any;
+    building_ownership_manager: any;
+    pacts: any;
+    meta_data: {
+        real_date: string;
+        game_date: string;
+    };
+}
+
 export class Vic3Save implements ParadoxSave {
 
-    public static makeSaveFromRawData(saveData: any) {
+    public static makeSaveFromRawData(saveData: RawSaveData) {
         const overlordToVassals = Vic3Save.getOverlordToVassals(saveData.pacts.database);
         const state2ownerIndex = new Map<number, number>();
         const countryIndex2StateRegions: Map<string, StateRegion[]> = new Map();
-        
         for (const stateEntryIndex in saveData.states.database) {
             const index = parseInt(stateEntryIndex);
             const stateEntry = saveData.states.database[index];
             state2ownerIndex.set(index, stateEntry["country"]);
-            
             const stateRegion = StateRegion.fromRawData(stateEntry, index);
             const ownerIndex = stateRegion.getOwnerCountryIndex() + "";
             countryIndex2StateRegions.set(stateRegion.getOwnerCountryIndex() + "", (countryIndex2StateRegions.get(ownerIndex) || []).concat([stateRegion]));
         }
-
         const countries: Country[] = [];
-        const country2buildingEntries = new Map<string, any[]>();
+        const country2Buildings = Vic3Save.assembleCountry2BuildingsMap(saveData, state2ownerIndex);
         const country2pops = new Map<string, Pop[]>();
-        for (const buildingIndex in saveData.building_manager.database) {
-            const buildingEntry = saveData.building_manager.database[buildingIndex];
-            const state = buildingEntry["state"];
-            const stateEntry = saveData.states.database[state];
-            if (!stateEntry) {
-                console.warn("State entry not found for building " + buildingEntry["building"] + " in state " + state);
-                continue;
-            }
-            const country = stateEntry["country"] + "";
-            if (!country2buildingEntries.has(country)) {
-                country2buildingEntries.set(country, []);
-            }
-            const buildingsFromEntry = Building.fromRawData(buildingEntry, saveData.building_manager.database, saveData.building_ownership_manager.database, state2ownerIndex);
-            country2buildingEntries.get(country)!.push(...buildingsFromEntry);
-        }
         for (const popIndex in saveData.pops.database) {
             const popEntry = saveData.pops.database[popIndex];
             const state = popEntry["location"];
@@ -74,7 +72,6 @@ export class Vic3Save implements ParadoxSave {
         for (const countryIndex in saveData.country_manager.database) {
             const countryEntry = saveData.country_manager.database[countryIndex];
             const countryBudget = countryEntry["budget"] ? CountryBudget.fromRawData(countryEntry["budget"]) : CountryBudget.NONE;
-            //if (true || countryEntry["country_type"] && countryEntry["country_type"] == "recognized") {
             if (countryEntry["country_type"] != undefined) {
                 const techEntry = countryIndex2TechEntry.get(countryIndex) || {};
                 const playerName = country2playerName.get(countryIndex) || null;
@@ -84,8 +81,8 @@ export class Vic3Save implements ParadoxSave {
                     const vassalCountryEntry = saveData.country_manager.database[v];
                     return vassalCountryEntry ? vassalCountryEntry.definition : v;
                 });
-                const country = new Country(playerName, vassalTags, countryEntry.definition, countryEntry.pop_statistics, country2buildingEntries.get(countryIndex) || [],
-                    country2pops.get(countryIndex) || [], techEntry, countryBudget, taxLevel);
+                const country = new Country(playerName, vassalTags, countryEntry.definition, states, countryEntry.pop_statistics,
+                    country2Buildings.get(countryIndex) || [], country2pops.get(countryIndex) || [], techEntry, countryBudget, taxLevel);
                 countries.push(country);
                 index2Country.set(countryIndex, country);
                 if (countryEntry["power_bloc_as_core"]) {
@@ -105,7 +102,6 @@ export class Vic3Save implements ParadoxSave {
             }
         }
         const nonBlocCountries = existingCountries.filter(c => blocs.every(bloc => !bloc.getCountries().getInternalElements().includes(c)));
-        //"1863.6.3.18"
         const realDateString = saveData.meta_data.real_date;
         const ingameDateString = saveData.meta_data.game_date;
         const ingameDateStringDatePart = ingameDateString.substring(0, ingameDateString.lastIndexOf("."));
@@ -117,18 +113,38 @@ export class Vic3Save implements ParadoxSave {
         return new Vic3Save(nonBlocCountries, blocs, ingameDate, realDate);
     }
 
+    private static assembleCountry2BuildingsMap(saveData: RawSaveData, state2ownerIndex: Map<number, number>): Map<string, Building[]> {
+        const country2Buildings = new Map<string, Building[]>();
+        for (const buildingIndex in saveData.building_manager.database) {
+            const buildingEntry = saveData.building_manager.database[buildingIndex];
+            const state = buildingEntry["state"];
+            const stateEntry = saveData.states.database[state];
+            if (!stateEntry) {
+                console.warn("State entry not found for building " + buildingEntry["building"] + " in state " + state);
+                continue;
+            }
+            const country = stateEntry["country"] + "";
+            if (!country2Buildings.has(country)) {
+                country2Buildings.set(country, []);
+            }
+            const buildingsFromEntry = Building.fromRawData(buildingEntry, saveData.building_manager.database, saveData.building_ownership_manager.database, state2ownerIndex);
+            country2Buildings.get(country)!.push(...buildingsFromEntry);
+        }
+        return country2Buildings;
+    }
+
     private static getOverlordToVassals(pactData: any): Map<string, string[]> {
         return Object.values(pactData)
             .filter((pact: any) => pact["action"] === "colony")
             .reduce((overlordToVassals: Map<string, string[]>, pact: any) => {
                 const overlord = String(pact["targets"]["first"]);
                 const vassal = String(pact["targets"]["second"]);
-                
+
                 if (!overlordToVassals.has(overlord)) {
                     overlordToVassals.set(overlord, []);
                 }
                 overlordToVassals.get(overlord)!.push(vassal);
-                
+
                 return overlordToVassals;
             }, new Map<string, string[]>());
     }
@@ -136,8 +152,29 @@ export class Vic3Save implements ParadoxSave {
     private cachedCountries: Country[];
     private stateRegions: Map<string, StateRegion> = new Map<string, StateRegion>();
 
+    public static fromJSON(json: any): Vic3Save {
+        const nonBlocCountries = (json.countries || []).map((cJson: any) => Country.fromJson(cJson));
+        const blocs = (json.blocs || []).map((bJson: any) => PowerBloc.fromJson(bJson));
+        const ingameDate = new Date(json.ingameDate);
+        const realDate = new Date(json.realDate);
+        const save = new Vic3Save(nonBlocCountries, blocs, ingameDate, realDate);
+        return save;
+    }
+
     private constructor(private nonBlocCountries: Country[], private blocs: PowerBloc[], private ingameDate: Date, private realDate: Date) {
         this.cachedCountries = this.nonBlocCountries.concat(this.blocs.flatMap(bloc => bloc.getCountries().getInternalElements()));
+    }
+
+    toJson() {
+        return {
+            "ingameDate": this.ingameDate.toISOString(),
+            "realDate": this.realDate.toISOString(),
+
+            "countries": this.nonBlocCountries.map(c => c.toJson()),
+            "blocs": this.blocs.map(b => b.toJson()),
+
+            "stateRegions": Array.from(this.stateRegions.values()).map(r => r.toJson())
+        };
     }
 
     getCountries(includeAI: boolean) {
@@ -156,13 +193,15 @@ export class Vic3Save implements ParadoxSave {
         return this.realDate;
     }
 
-    toJson() {
+    getDemographics(countries: Country[]) {
         return {
-            "countries": this.nonBlocCountries.map(c => c.toJson()),
-            "blocs": this.blocs.map(b => b.toJson()),
-            "ingameDate": this.ingameDate.toISOString(),
-            "realDate": this.realDate.toISOString(),
-            "stateRegions": Array.from(this.stateRegions.values()).map(r => r.toJson())
+            populationByCountry: countries.map(c => ({
+                name: c.getTag(),
+                tag: c.getTag(),
+                population: c.getPopulation(),
+                playerName: c.getPlayerName() || null,
+                vassalTags: c.getVassalTags()
+            }))
         };
     }
 }
