@@ -19,7 +19,7 @@ export class SlabMapViewComponent {
 
     @Input() geoJsonFetcher!: () => Observable<any>;
     @Input() viewModes: ViewMode<any>[] = [];
-    @Input() colorConfigProviders: ColorConfigProvider[] = [];
+    protected colorConfigProviders: ColorConfigProvider[] = [];
     @Input() behaviorConfig: BehaviorConfigProvider = new BehaviorConfigProvider(0.75);
     @Input() selectionCallback: (key: string) => void = (key: string) => {
         this.polygonSelectComponent.setLockedState(key, false, false);
@@ -56,13 +56,12 @@ export class SlabMapViewComponent {
     };
 
     ngOnChanges() {
-        if (this.viewModes.length === 0 || !this.colorConfigProviders.length) {
+        if (this.viewModes.length === 0) {
             return;
         }
-
+        this.colorConfigProviders = this.viewModes.map(vm => vm.getColorConfig());
         this.currentViewMode = this.viewModes[0];
         this.currentTooltipProvider = this.currentViewMode.getTooltip();
-
         this.geoJsonFetcher().subscribe((geoJson) => {
             const meshes = makeGeoJsonPolygons(geoJson, this.colorConfigProviders[0], () => null, () => false, 0.75);
             this.polygonSelectComponent.launch(meshes, this.colorConfigProviders, this.behaviorConfig);

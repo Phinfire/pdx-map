@@ -10,14 +10,14 @@ export class Building {
         const buildings = [];
         const totalLevels = rawData["levels"] || 0;
         let remainingLevels = rawData["levels"] || 0
+        const cleanName = this.cleanUpBuildingName(rawData["building"]);
         if (rawData["owners"]) {
             for (const ownerEntryIndex in rawData["owners"]) {
                 const i = parseInt(ownerEntryIndex);
                 const ownershipEntry = allOwnershipsData[i];
+                const levelsOwnedByThisOwner = ownershipEntry ? Math.max(remainingLevels, ownershipEntry["levels"] || 0) : 0;
                 let ownershipType = Ownership.WORKERS;
-                let levels = ownershipEntry ? ownershipEntry["levels"] || 0 : 0;
-                const cleanName = this.cleanUpBuildingName(rawData["building"]);
-                if (levels <= 0) {
+                if (levelsOwnedByThisOwner <= 0) {
                     continue;
                 }
                 if (ownershipEntry != undefined && ownershipEntry["identity"]) {
@@ -45,12 +45,11 @@ export class Building {
                         console.warn("Unknown ownership identity for building " + rawData["building"] + " in state " + location + ": ", ownershipEntry, rawData);
                     }
                 }
-                const fraction = levels / totalLevels;
-                remainingLevels -= levels;
+                const fraction = levelsOwnedByThisOwner / totalLevels;
+                remainingLevels -= levelsOwnedByThisOwner;
                 buildings.push(this.createBuilding(
                     rawData,
-                    location,
-                    levels,
+                    levelsOwnedByThisOwner,
                     fraction,
                     ownershipType,
                     Building.getScaledMap(goodsIn, fraction),
@@ -62,7 +61,6 @@ export class Building {
             const remainingFraction = remainingLevels / totalLevels;
             buildings.push(this.createBuilding(
                 rawData,
-                location,
                 remainingLevels,
                 remainingFraction,
                 Ownership.WORKERS,
@@ -70,7 +68,7 @@ export class Building {
                 Building.getScaledMap(goodsOut, remainingFraction)
             ));
         }
-        return {locationIndex: location, buildings: buildings};
+        return { locationIndex: location, buildings: buildings };
     }
 
     private static setupGoodMaps(rawData: any): { goodsIn: Map<number, number>, goodsOut: Map<number, number> } {
@@ -103,10 +101,9 @@ export class Building {
         return scaledMap;
     }
 
-    private static createBuilding(rawData: any, location: number, levels: number, fraction: number, ownership: Ownership, goodsIn: Map<number, number>, goodsOut: Map<number, number>): Building {
+    private static createBuilding(rawData: any, levels: number, fraction: number, ownership: Ownership, goodsIn: Map<number, number>, goodsOut: Map<number, number>): Building {
         const b = new Building(
             this.cleanUpBuildingName(rawData["building"]),
-            location,
             levels,
             (rawData["goods_cost"] || 0) * fraction,
             (rawData["goods_sales"] || 0) * fraction,
@@ -116,9 +113,6 @@ export class Building {
             goodsIn,
             goodsOut
         );
-        if (rawData["building"] === "building_arms_industry") {
-            console.log("Created building", b);
-        }
         return b;
     }
 
@@ -129,7 +123,6 @@ export class Building {
     public static fromJson(json: any): Building {
         return new Building(
             json.name,
-            json.state,
             json.levels,
             json.valueGoodsBought,
             json.valueGoodsSold,
@@ -141,7 +134,7 @@ export class Building {
         );
     }
 
-    constructor(private name: string, private state: number, private levels: number, private valueGoodsBought: number,
+    constructor(private name: string, private levels: number, private valueGoodsBought: number,
         private valueGoodsSold: number, private cashReserves: number, private dividends: number, private ownership: Ownership, private goodsIn: Map<number, number>, private goodsOut: Map<number, number>) {
     }
 
@@ -149,7 +142,7 @@ export class Building {
         return ["urban_center", "government_administration",
             "university", "barracks", "conscription_center", "naval_base", "construction_sector", "trade_center"].some((govBuildingName) => buildingName == govBuildingName);
     }
-    
+
     private static isSubsistenceBuildingName(buildingName: string): boolean {
         return buildingName.startsWith("subsistence_");
     }
@@ -203,11 +196,11 @@ export class Building {
     }
 
     isInfrastructure(): boolean {
-        return ["railway", "port"].some((infraBuildingName) => this.getName() == infraBuildingName);
+        return ["railway", "port"].some((infraBuildingName) => this.getName() == infraBuildingName) && !this.isCompany();
     }
 
     isAgricultural(): boolean {
-        return !this.isSubsistence() &&
+        return !this.isSubsistence() && !this.isCompany() && 
             (this.getName().indexOf("_farm") != -1
                 || this.getName().indexOf("_plantation") != -1
                 || this.getName().indexOf("_ranch") != -1
@@ -216,7 +209,7 @@ export class Building {
     }
 
     isMine(): boolean {
-        return this.getName().endsWith("_mine") || this.getName() == "oil_rig";
+        return !this.isCompany() && (this.getName().endsWith("_mine") || this.getName() == "oil_rig");
     }
 
     isCapitalistDen() {
@@ -224,7 +217,7 @@ export class Building {
     }
 
     isCompany() {
-        return this.getName().startsWith("company_");
+        return this.getName().startsWith("company_") || this.getName().startsWith("regional_company_");
     }
 
     isFactory(): boolean {
@@ -239,7 +232,6 @@ export class Building {
     toJson() {
         return {
             name: this.name,
-            state: this.state,
             levels: this.levels,
             valueGoodsBought: this.valueGoodsBought,
             valueGoodsSold: this.valueGoodsSold,

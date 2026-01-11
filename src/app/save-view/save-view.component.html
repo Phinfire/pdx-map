@@ -21,36 +21,51 @@
 <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)" style="width: 100%;">
     <mat-tab label="Countries">
         @if (selectedTabIndex === 0) {
-        <ng-container *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getCountryColumnList()}"></ng-container>
+        <ng-container
+            *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getCountryColumnList()}"></ng-container>
         }
     </mat-tab>
     <mat-tab label="Country Budgets">
         @if (selectedTabIndex === 1) {
-        <ng-container *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getCountryFinancialColumnList()}"></ng-container>
+        <ng-container
+            *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getCountryFinancialColumnList()}"></ng-container>
         }
     </mat-tab>
     <mat-tab label="Blocs" [disabled]="!activeSave || activeSave.getPowerBlocs().length === 0">
         @if (selectedTabIndex === 2) {
-        <ng-container *ngTemplateOutlet="tableWrapper; context: {rowElements: activeSave.getPowerBlocs(), columns: columnProvider.getPowerBlocColumnList()}"></ng-container>
+        <ng-container
+            *ngTemplateOutlet="tableWrapper; context: {rowElements: activeSave.getPowerBlocs(), columns: columnProvider.getPowerBlocColumnList()}"></ng-container>
         }
     </mat-tab>
-    <mat-tab label="Building Financials">
+    <mat-tab label="Economy">
         @if (selectedTabIndex === 3) {
-        <ng-container *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getBuildingFinancialColumnList()}"></ng-container>
+        <ng-container
+            *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getBuildingFinancialColumnList()}"></ng-container>
         }
     </mat-tab>
     <mat-tab label="Buildings">
         @if (selectedTabIndex === 4) {
-        <ng-container *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getBuildingTableColumnList()}"></ng-container>
+        <ng-container
+            *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getBuildingTableColumnList()}"></ng-container>
+        }
+    </mat-tab>
+    <mat-tab>
+        <ng-template mat-tab-label>
+            <mat-icon>groups</mat-icon>
+        </ng-template>
+        @if (selectedTabIndex === 5) {
+        <ng-container
+            *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getPopulationColumnList()}"></ng-container>
         }
     </mat-tab>
     <mat-tab label="Links">
-        @if (selectedTabIndex === 5) {
-        <ng-container *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getEcoConnectionsColumnList()}"></ng-container>
+        @if (selectedTabIndex === 6) {
+        <ng-container
+            *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getEcoConnectionsColumnList()}"></ng-container>
         }
     </mat-tab>
     <mat-tab label="Goods">
-        @if (selectedTabIndex === 6) {
+        @if (selectedTabIndex === 7) {
         <div class="table-controls">
             <label class="radio-group-label">Goods View Mode</label>
             <mat-radio-group [(ngModel)]="goodsViewMode" (ngModelChange)="onGoodsViewModeChange($event)"
@@ -69,17 +84,17 @@
             </mat-radio-group>
         </div>
         }
-        @if (selectedTabIndex === 6) {
-        <ng-container *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getGoodColumns()}"></ng-container>
+        @if (selectedTabIndex === 7) {
+        <ng-container
+            *ngTemplateOutlet="tableWrapper; context: {rowElements: getCountries(), columns: columnProvider.getGoodColumns()}"></ng-container>
         }
     </mat-tab>
     <mat-tab>
         <ng-template mat-tab-label>
             <mat-icon>map</mat-icon>
         </ng-template>
-        @if (selectedTabIndex === 7) {
-        <app-slab-map-view [geoJsonFetcher]="geoJsonFetcher" [viewModes]="viewModes"
-            [colorConfigProviders]="colorConfigProviders" [behaviorConfig]="behaviorConfig">
+        @if (selectedTabIndex === 8) {
+        <app-slab-map-view [geoJsonFetcher]="geoJsonFetcher" [viewModes]="viewModes" [behaviorConfig]="behaviorConfig">
         </app-slab-map-view>
         }
     </mat-tab>

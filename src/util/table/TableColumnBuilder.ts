@@ -12,6 +12,7 @@ export class TableColumnBuilder<T> {
     private isImage: boolean = false;
     private headerImage: string | undefined;
     private headerImageType: ImageIconType | undefined;
+    private cellValueTransform: ((value: any) => any) | null = null;
 
     constructor(def: string, header: string = '') {
         this.def = def;
@@ -56,6 +57,11 @@ export class TableColumnBuilder<T> {
     withHeaderImage(headerImage: string, headerImageType: ImageIconType): this {
         this.headerImage = headerImage;
         this.headerImageType = headerImageType;
+        return this;
+    }
+
+    withCellValueTransform(transform: (value: any) => any): this {
+        this.cellValueTransform = transform;
         return this;
     }
 

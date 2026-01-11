@@ -1,13 +1,12 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { SlabMapViewComponent } from '../slab-map-view/slab-map-view.component';
-import { ViewModeProvider } from '../slab-map-view/ViewModeProvider';
 import { ViewMode } from '../slab-map-view/ViewMode';
 import { ColorConfigProvider } from '../viewers/polygon-select/ColorConfigProvider';
 import { BehaviorConfigProvider } from '../viewers/polygon-select/BehaviorConfigProvider';
 import { MapService } from '../map.service';
 import { Vic3GameFilesService } from '../../model/vic/Vic3GameFilesService';
 import { ResourceType } from '../../model/vic/enum/ResourceType';
-import { ValueGradientColorConfig } from '../viewers/polygon-select/DynamicColorConfig';
+import { ValueGradientColorConfig } from '../viewers/polygon-select/ValueGradientColorConfig';
 import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';

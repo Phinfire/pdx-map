@@ -14,7 +14,7 @@
     font-family: var(--header-font-family);
     @include mat.table-overrides((row-item-container-height: 3em,
             row-item-label-text-size: 1em,
-            header-container-height: 2.2em,
+            header-container-height: 2em,
             header-headline-size: 1.4em,
             row-item-outline-color: var(--faded-border-color),
             row-item-label-text-color: var(--text-color),
@@ -47,7 +47,7 @@ table th {
 
 table td {
     background-color: var(--background-color);
-    padding: 0.5em;
+    padding: 0em;
     border-bottom: 1px solid var(--faded-border-color);
     transition: background 0.2s;
 }

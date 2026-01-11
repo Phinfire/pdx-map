@@ -1,5 +1,6 @@
 import { TableColumn } from "./TableColumn";
 import { HasElements } from "./HasElements";
+import { ImageIconType } from "./ImageIconType";
 
 export class AggregatingTableColumn<C extends HasElements<E>, E> extends TableColumn<C> {
 
@@ -11,7 +12,9 @@ export class AggregatingTableColumn<C extends HasElements<E>, E> extends TableCo
         predicate: (element: E) => boolean, 
         valueExtractor: (element: E) => number,
         nameGetter: (element: E) => string,
-        predicateForNormalization: ((element: E) => boolean) | null = null
+        predicateForNormalization: ((element: E) => boolean) | null = null,
+        headerImage: string | undefined = undefined,
+        headerImageType: ImageIconType | undefined = undefined
     ) {
         const cellValue = (container: C, _: number) => {
             if (predicateForNormalization != null) {
@@ -34,6 +37,6 @@ export class AggregatingTableColumn<C extends HasElements<E>, E> extends TableCo
                 .join('\n');
         }
         
-        super(def, header, tooltip, sortable, cellValue, cellTooltip);
+        super(def, header, tooltip, sortable, cellValue, cellTooltip, null, false, headerImage, headerImageType);
     }
 }

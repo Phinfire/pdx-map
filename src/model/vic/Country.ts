@@ -4,6 +4,7 @@ import { ModelElementList } from "./ModelElementList";
 import { Pop } from "./Pop";
 import { HasElements } from "../../util/table/HasElements";
 import { StateRegion } from "./StateRegion";
+import { PopulationStatBlock } from "./PopulationStatBlock";
 
 export class Country implements HasElements<Building> {
 
@@ -12,6 +13,7 @@ export class Country implements HasElements<Building> {
     private cachedGoodIn: Map<number, number> = new Map();
     private cachedGoodOut: Map<number, number> = new Map();
 
+    private cachedTotalPopulationBlock
 
     public static fromJson(json: any) {
         return new Country(
@@ -20,7 +22,6 @@ export class Country implements HasElements<Building> {
             json.tag,
             json.states.map((s: any) => StateRegion.fromJson(s)),
             json.popStatistics,
-            json.buildings.map((b: any) => Building.fromJson(b)),
             json.pops.map((p: any) => Pop.fromJson(p)),
             json.techEntry,
             CountryBudget.fromJson(json.budget),
@@ -43,9 +44,10 @@ export class Country implements HasElements<Building> {
         };
     }
 
-    constructor(private playerName: string | null, private vassalTags: string[], private tag: string, private states: StateRegion[], private popStatistics: any, buildings: any[], pops: Pop[], private techEntry: any, private budget: CountryBudget, private taxLevel: string) {
-        this.buildings = new ModelElementList<Building>(buildings);
+    constructor(private playerName: string | null, private vassalTags: string[], private tag: string, private states: StateRegion[], private popStatistics: any, pops: Pop[], private techEntry: any, private budget: CountryBudget, private taxLevel: string) {
+        this.buildings = new ModelElementList<Building>(states.flatMap(s => s.getBuildings()));
         this.pops = new ModelElementList<Pop>(pops);
+        this.cachedTotalPopulationBlock = PopulationStatBlock.merge(states.map(s => s.getPopulationStatBlock()));
     }
 
     getBudget(): CountryBudget {
@@ -108,5 +110,13 @@ export class Country implements HasElements<Building> {
 
     getVassalTags(): string[] {
         return this.vassalTags;
+    }
+
+    getPopulationStatBlock(): PopulationStatBlock {
+        return this.cachedTotalPopulationBlock;
+    }
+
+    getStates(): StateRegion[] {
+        return this.states;
     }
 }

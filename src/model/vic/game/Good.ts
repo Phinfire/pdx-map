@@ -9,6 +9,16 @@ export class Good {
     }
 
     getIconUrl(): string {
+        if (this.key == "engines") {
+            return "https://codingafterdark.de/pdx-map-gamedata/vic3/goods_icons/locomotives.webp";
+        }
+        if (this.key == "manowars") {
+            return "https://codingafterdark.de/pdx-map-gamedata/vic3/goods_icons/man_o_wars.webp";
+        }
         return "https://codingafterdark.de/pdx-map-gamedata/vic3/goods_icons/" + this.key + ".webp";
+    }
+
+    getHumanName(): string {
+        return this.name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
 }

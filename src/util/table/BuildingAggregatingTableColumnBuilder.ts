@@ -24,7 +24,9 @@ export class BuildingAggregatingTableColumnBuilder extends AggregatingTableColum
             this['sortable'],
             this['predicate'],
             this['valueExtractor'],
-            this['predicateForNormalization']
+            this['predicateForNormalization'],
+            this['headerImage'],
+            this['headerImageType']
         );
     }
 }

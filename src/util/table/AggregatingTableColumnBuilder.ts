@@ -1,5 +1,6 @@
 import { AggregatingTableColumn } from "./AggregatingTableColumn";
 import { HasElements } from "./HasElements";
+import { ImageIconType } from "./ImageIconType";
 
 export class AggregatingTableColumnBuilder<C extends HasElements<E>, E> {
     private def: string;
@@ -10,6 +11,8 @@ export class AggregatingTableColumnBuilder<C extends HasElements<E>, E> {
     private valueExtractor: ((element: E) => number) | null = null;
     private nameGetter: ((element: E) => string) | null = null;
     private predicateForNormalization: ((element: E) => boolean) | null = null;
+    private headerImage: string | undefined;
+    private headerImageType: ImageIconType | undefined;
 
     constructor(def: string, header: string) {
         this.def = def;
@@ -46,6 +49,12 @@ export class AggregatingTableColumnBuilder<C extends HasElements<E>, E> {
         return this;
     }
 
+    withHeaderImage(headerImage: string, headerImageType: ImageIconType): this {
+        this.headerImage = headerImage;
+        this.headerImageType = headerImageType;
+        return this;
+    }
+
     build(): AggregatingTableColumn<C, E> {
         if (!this.predicate) {
             throw new Error('predicate is required');
@@ -64,7 +73,9 @@ export class AggregatingTableColumnBuilder<C extends HasElements<E>, E> {
             this.predicate,
             this.valueExtractor,
             this.nameGetter,
-            this.predicateForNormalization
+            this.predicateForNormalization,
+            this.headerImage,
+            this.headerImageType
         );
     }
 }

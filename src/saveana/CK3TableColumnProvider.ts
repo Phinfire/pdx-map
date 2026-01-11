@@ -2,6 +2,7 @@ import { Character } from "../model/ck3/Character";
 import { CK3 } from "../model/ck3/CK3";
 import { SimpleTableColumn } from "../util/table/SimpleTableColumn";
 import { TableColumn } from "../util/table/TableColumn";
+import { TableColumnBuilder } from "../util/table/TableColumnBuilder";
 
 export class CK3TableColumnProvider {
 
@@ -14,10 +15,10 @@ export class CK3TableColumnProvider {
                 new SimpleTableColumn<Character>("faith", "Faith", char => char.getFaith() ? char.getFaith()!.getName() : null, null, false, this.rootUrl + "/faith/catholic.webp"),
                 new SimpleTableColumn<Character>("culture", "Culture",
                     char => char.getCulture() ? char.getCulture()!.getName() : null, null, false, this.rootUrl + "/message_feed/culture.webp"),
-                    TableColumn.from("Tech", 
-                        char => char.getCulture() ? char.getCulture()!.getResearchedInnovationNames().length : 0,
-                        char => char.getCulture() ? char.getCulture()!.getResearchedInnovationNames().map((n: string) => n.replace("innovation_", "")).join("\n") : ""
-                    ),
+                    new TableColumnBuilder<Character>("tech", "Tech")
+                        .withCellValue((char: Character) => char.getCulture() ? char.getCulture()!.getResearchedInnovationNames().length : 0)
+                        .withCellTooltip((char: Character) => char.getCulture() ? char.getCulture()!.getResearchedInnovationNames().map((n: string) => n.replace("innovation_", "")).join("\n") : "")
+                        .build(),
                 new SimpleTableColumn<Character>("age", "Age",
                     char => char.getAge()),
                 new TableColumn<Character>(
@@ -62,16 +63,16 @@ export class CK3TableColumnProvider {
                     false,
                     this.rootUrl + "/icon_domain.webp"
                 ),
-                TableColumn.from("Titles", 
-                    char => char.getTitles().length,
-                    char => char.getTitles().map(title => title.getTier().getStateTitle() + " of " + title.getLocalisedName()).join("\n"),
-                ),
+                new TableColumnBuilder<Character>("titles", "Titles")
+                    .withCellValue((char: Character) => char.getTitles().length)
+                    .withCellTooltip((char: Character) => char.getTitles().map(title => title.getTier().getStateTitle() + " of " + title.getLocalisedName()).join("\n"))
+                    .build(),
                 //new SimpleTableColumn<Character>("vassals", "Vassals",
                 //    char => char.getVassals().length, null, false, this.rootUrl + "/icon_vassal.webp"),
-                TableColumn.from("Troops", 
-                    char => char.getLevies() + char.getNonLevyTroops() + char.getKnights().length,
-                    char => `Levies: ${char.getLevies()}\nMAA: ${char.getNonLevyTroops()}\nKnights: ${char.getKnights().length}`
-                ),
+                new TableColumnBuilder<Character>("troops", "Troops")
+                    .withCellValue((char: Character) => char.getLevies() + char.getNonLevyTroops() + char.getKnights().length)
+                    .withCellTooltip((char: Character) => `Levies: ${char.getLevies()}\nMAA: ${char.getNonLevyTroops()}\nKnights: ${char.getKnights().length}`)
+                    .build(),
                 new SimpleTableColumn<Character>("army", "Levies", char => char.getLevies(), null, false, this.rootUrl + "/icon_soldier.webp"),
                 new SimpleTableColumn<Character>("maa", "MAA", char => char.getNonLevyTroops(), null, false),
                 new SimpleTableColumn<Character>("knights", "Knights",

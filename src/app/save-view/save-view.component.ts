@@ -25,6 +25,8 @@ import { BehaviorConfigProvider } from '../viewers/polygon-select/BehaviorConfig
 import { ColorConfigProvider } from '../viewers/polygon-select/ColorConfigProvider';
 import { takeUntil, Subject } from 'rxjs';
 import { SideNavContentProvider } from '../../ui/SideNavContentProvider';
+import { ValueGradientColorConfig } from '../viewers/polygon-select/ValueGradientColorConfig';
+import { TableColumn } from '../../util/table/TableColumn';
 
 @Component({
     selector: 'app-save-view',
@@ -89,10 +91,21 @@ export class SaveViewComponent implements OnDestroy {
         if (!this.activeSave) {
             return;
         }
-        const colorConfig = new ColorConfigProvider(new Map<string, number>(), true);
+        const state2Value = new Map<string, number>();
+        this.activeSave
+            .getCountries(true)
+            .flatMap(c => c.getStates())
+            .forEach(s =>
+                state2Value.set(
+                    s.getName(),
+                    (state2Value.get(s.getName()) ?? 0) +
+                    s.getPopulationStatBlock().getTotalPopulation()
+                )
+            );
+        const colorConfig = new ValueGradientColorConfig(state2Value);
         const viewMode: ViewMode<any> = {
             getColorConfig: () => colorConfig,
-            getTooltip: () => (key: string) => `<b>${key}</b>`
+            getTooltip: () => (key: string) => `<b>${key}</b><br>Population: ${TableColumn.formatNumber(state2Value.get(key) || 0)}`
         };
 
         this.viewModes = [viewMode];
@@ -102,8 +115,8 @@ export class SaveViewComponent implements OnDestroy {
     onTabChange(index: number) {
         this.selectedTabIndex = index;
         localStorage.setItem('saveViewTabIndex', index.toString());
-        if (this.selectedTabIndex === 6) {
-            this.refreshGoodColumnList(); 
+        if (this.selectedTabIndex === 7) {
+            this.refreshGoodColumnList();
         }
     }
 

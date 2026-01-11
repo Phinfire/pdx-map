@@ -33,7 +33,9 @@ interface Nation {
 export class AlliancehelperComponent implements OnInit, OnDestroy {
 
     @Input() vic3SaveFile?: Vic3Save;
-    saveFileId: string = "f9396abb-f48e-4f80-8d83-355d0ed59dc3"; // TODO: Don't hardcode this, needs to depend on MegaCampaign's last V3 session
+    // TODO: Don't hardcode this, needs to depend on MegaCampaign's last V3 session
+    saveFileId: string = "b9b8af2a-6938-4eec-8c49-a52a501f7fbe";
+    //saveFileId: string = "f9396abb-f48e-4f80-8d83-355d0ed59dc3"; 
     private nationsLoaded = false;
     private countriesLoaded = false;
     private megaService = inject(MegaService);

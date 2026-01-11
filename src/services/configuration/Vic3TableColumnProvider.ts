@@ -33,6 +33,8 @@ export class Vic3TableColumnProvider {
         new TableColumnBuilder<Country>("player", "Player")
             .withCellValue((element: Country) => element.getPlayerName() || "")
             .withCellTooltip((_: Country) => null)
+            .withHeaderImage("face", ImageIconType.MATERIAL_SYMBOL)
+            .withTooltip("Player Name")
             .build(),
     ];
 
@@ -46,6 +48,8 @@ export class Vic3TableColumnProvider {
             .withHeaderImage("groups", ImageIconType.MATERIAL_SYMBOL)
             .build(),
         new TableColumnBuilder<Country>("employed", "Employees")
+            .withHeaderImage("engineering", ImageIconType.MATERIAL_SYMBOL)
+            .withTooltip("Employed Population")
             .withCellValue((element: Country) => element.getNumberOfEmployed())
             .withCellTooltip((element: Country) => element.getNumberOfEmployed().toLocaleString())
             .build(),
@@ -63,7 +67,7 @@ export class Vic3TableColumnProvider {
             "Construction Sectors"
         )
             .withTooltip("Total levels of all construction sector buildings owned by this country")
-            .isSortable(true)
+            .withHeaderImage("front_loader", ImageIconType.MATERIAL_SYMBOL)
             .withPredicate(b => b.isConstructionSector())
             .withValueExtractor(b => b.getLevels())
             .build()
@@ -73,6 +77,8 @@ export class Vic3TableColumnProvider {
         new TableColumnBuilder<Country>("cash", "Cash")
             .withCellValue((element: Country) => element.getBudget().getNetCash())
             .withCellTooltip((_: Country) => null)
+            .withHeaderImage("currency_pound", ImageIconType.MATERIAL_SYMBOL)
+            .withTooltip("Cash balance")
             .build(),
         new TableColumnBuilder<Country>("credit", "Credit")
             .withCellValue((element: Country) => element.getBudget().getCredit())
@@ -109,7 +115,7 @@ export class Vic3TableColumnProvider {
             "£ Reserves"
         )
             .withTooltip("Total cash reserve of all buildings")
-            .isSortable(true)
+            .withHeaderImage("savings", ImageIconType.MATERIAL_SYMBOL)
             .withPredicate(b => true)
             .withValueExtractor(b => Math.floor(b.getCashReserves()))
             .build(),
@@ -118,16 +124,14 @@ export class Vic3TableColumnProvider {
             "Dividends"
         )
             .withTooltip("Total dividends paid by all buildings")
-            .isSortable(true)
             .withPredicate(b => true)
             .withValueExtractor(b => Math.floor(b.getDividends()))
             .build(),
         new BuildingAggregatingTableColumnBuilder(
             "valueGoodsSold",
-            "Goods Sold"
+            "Goods Sale Value"
         )
             .withTooltip("")
-            .isSortable(true)
             .withPredicate(b => true)
             .withValueExtractor(b => Math.floor(b.getMarketValueOfGoodSold()))
             .build(),
@@ -136,7 +140,6 @@ export class Vic3TableColumnProvider {
             "Value Added"
         )
             .withTooltip("")
-            .isSortable(true)
             .withPredicate(b => true)
             .withValueExtractor(b => Math.floor(Math.max(0, b.getNetValueAdded())))
             .build()
@@ -147,8 +150,8 @@ export class Vic3TableColumnProvider {
             'buildings',
             'Eco Buildings'
         )
-            .withTooltip('Total levels buildings excluding subsistence, governmental or infrastructure buildings')
-            .isSortable(true)
+            .withTooltip('Total levels buildings excluding subsistence, governmental, infrastructure or company office buildings')
+            .withHeaderImage("business", ImageIconType.MATERIAL_SYMBOL)
             .withPredicate(building => !building.isSubsistence() && !building.isGovernment() && !building.isInfrastructure() && !building.isCapitalistDen() && !building.isCompany())
             .withValueExtractor(b => b.getLevels())
             .build(),
@@ -157,25 +160,24 @@ export class Vic3TableColumnProvider {
             'Factories'
         )
             .withTooltip('Number of factories')
-            .isSortable(true)
             .withPredicate(b => b.isFactory())
             .withValueExtractor(b => b.getLevels())
+            .withHeaderImage("factory", ImageIconType.MATERIAL_SYMBOL)
             .build(),
         new BuildingAggregatingTableColumnBuilder(
             'agricultural',
             'Agricultural'
         )
             .withTooltip('Number of agricultural buildings')
-            .isSortable(true)
             .withPredicate(b => b.isAgricultural())
             .withValueExtractor(b => b.getLevels())
+            .withHeaderImage("agriculture", ImageIconType.MATERIAL_SYMBOL)
             .build(),
         new BuildingAggregatingTableColumnBuilder(
             'mine',
             'Mines'
         )
             .withTooltip('Number of mine buildings')
-            .isSortable(true)
             .withPredicate(b => b.isMine())
             .withValueExtractor(b => b.getLevels())
             .build(),
@@ -184,7 +186,7 @@ export class Vic3TableColumnProvider {
             'Government'
         )
             .withTooltip('Number of government buildings')
-            .isSortable(true)
+            .withHeaderImage("account_balance", ImageIconType.MATERIAL_SYMBOL)
             .withPredicate(b => b.isGovernment())
             .withValueExtractor(b => b.getLevels())
             .build(),
@@ -193,7 +195,6 @@ export class Vic3TableColumnProvider {
             'Infrastructure'
         )
             .withTooltip('Number of infrastructure buildings')
-            .isSortable(true)
             .withPredicate(b => b.isInfrastructure())
             .withValueExtractor(b => b.getLevels())
             .build(),
@@ -202,10 +203,18 @@ export class Vic3TableColumnProvider {
             'Capital'
         )
             .withTooltip('Number of capitalist den buildings')
-            .isSortable(true)
             .withPredicate(b => b.isCapitalistDen() || b.isCompany())
             .withValueExtractor(b => b.getLevels())
             .build(),
+        new BuildingAggregatingTableColumnBuilder(
+            "company",
+            "Company"
+        )
+            .withTooltip("Number of company buildings")
+            .withHeaderImage("enterprise", ImageIconType.MATERIAL_SYMBOL)
+            .withPredicate(b => b.isCompany())
+            .withValueExtractor(b => b.getLevels())
+            .build()
     ];
 
     powerBlocColumns: TableColumn<PowerBloc>[] = [
@@ -247,7 +256,6 @@ export class Vic3TableColumnProvider {
             "Public"
         )
             .withTooltip("")
-            .isSortable(true)
             .withPredicate(b => b.getOwnership() == Ownership.LOCAL_GOVERNMENT)
             .withValueExtractor(b => b.getLevels())
             .withPredicateForNormalization(b => !b.isConstructionSector() && !b.isGovernment() && !b.isSubsistence())
@@ -257,7 +265,6 @@ export class Vic3TableColumnProvider {
             "Private"
         )
             .withTooltip("")
-            .isSortable(true)
             .withPredicate(b => b.getOwnership() == Ownership.LOCAL_CAPITALISTS)
             .withValueExtractor(b => b.getLevels())
             .withPredicateForNormalization(b => !b.isConstructionSector() && !b.isGovernment() && !b.isSubsistence())
@@ -267,12 +274,42 @@ export class Vic3TableColumnProvider {
             "Foreign Owned"
         )
             .withTooltip("")
-            .isSortable(true)
             .withPredicate(b => b.getOwnership() == Ownership.FOREIGN_CAPITALISTS || b.getOwnership() == Ownership.FOREIGN_GOVERNMENT)
             .withValueExtractor(b => b.getLevels())
             .withPredicateForNormalization(b => !b.isConstructionSector() && !b.isGovernment() && !b.isSubsistence())
             .build()
     ];
+
+    populationColumnList: TableColumn<Country>[] = this.baseColumns.concat([
+        new TableColumnBuilder<Country>("upperStrataPopulation", "Upper")
+            .withTooltip("% population in the upper strata")
+            .withCellValue((element: Country) => element.getPopulationStatBlock().upperStrataPopulation / element.getPopulation())
+            .withCellValueTransform((value: number) => (value * 100).toFixed(1) + " %")
+            .withCellTooltip((element: Country) => TableColumn.formatNumber(element.getPopulationStatBlock().upperStrataPopulation))
+            .build(),
+        new TableColumnBuilder<Country>("middleStrataPopulation", "Middle")
+            .withTooltip("% population in the middle strata")
+            .withCellValue((element: Country) => element.getPopulationStatBlock().middleStrataPopulation / element.getPopulation())
+            .withCellValueTransform((value: number) => (value * 100).toFixed(1) + " %")
+            .withCellTooltip((element: Country) => TableColumn.formatNumber(element.getPopulationStatBlock().middleStrataPopulation))
+            .build(),
+        new TableColumnBuilder<Country>("lowerStrataPopulation", "Lower")
+            .withTooltip("% population in the lower strata")
+            .withCellValue((element: Country) => element.getPopulationStatBlock().lowerStrataPopulation / element.getPopulation())
+            .withCellValueTransform((value: number) => (value * 100).toFixed(1) + " %")
+            .withCellTooltip((element: Country) => TableColumn.formatNumber(element.getPopulationStatBlock().lowerStrataPopulation))
+            .build(),
+        new TableColumnBuilder<Country>("radicals", "Radicals")
+            .withCellValue((element: Country) => element.getPopulationStatBlock().radicals / element.getPopulation())
+            .withCellValueTransform((value: number) => (value * 100).toFixed(1) + " %")
+            .withCellTooltip((element: Country) => TableColumn.formatNumber(element.getPopulationStatBlock().radicals))
+            .build(),
+        new TableColumnBuilder<Country>("loyalists", "Loyalists")
+            .withCellValue((element: Country) => element.getPopulationStatBlock().loyalists / element.getPopulation())
+            .withCellValueTransform((value: number) => (value * 100).toFixed(1) + " %")
+            .withCellTooltip((element: Country) => TableColumn.formatNumber(element.getPopulationStatBlock().loyalists))
+            .build()
+    ]);
 
     goodColumns: TableColumn<Country>[] = [];
 
@@ -328,6 +365,10 @@ export class Vic3TableColumnProvider {
         return this.baseColumns.concat(this.ecoConnectionsColumns);
     }
 
+    public getPopulationColumnList() {
+        return this.populationColumnList;
+    }
+
     public getGoodColumns(): TableColumn<Country>[] {
         return this.goodColumns;
     }
@@ -364,38 +405,28 @@ export class Vic3TableColumnProvider {
                             .map((country: Country) => {
                                 if (viewMode === GoodsViewMode.INPUT) { return country.getGoodIn(good.index); }
                                 if (viewMode === GoodsViewMode.OUTPUT) { return country.getGoodOut(good.index); }
-                                return country.getGoodOut(good.index) - country.getGoodIn(good.index);
+                                return country.getGoodOut(good.index) + country.getGoodIn(good.index);
                             })
                             .reduce((a, b) => a + b, 0);
                         return good.category === selectedGoodsCategory && total > 0;
                     })
-                    .map(good => new TableColumn<Country>(
-                        good.key,
-                        good.name,
-                        null,
-                        true,
-                        (element: Country) => {
+                    .map(good => new TableColumnBuilder<Country>(good.key, good.name)
+                        .withCellValue((element: Country) => {
                             let value = 0;
                             if (viewMode === GoodsViewMode.INPUT) value = element.getGoodIn(good.index);
                             else if (viewMode === GoodsViewMode.OUTPUT) value = element.getGoodOut(good.index);
                             else value = element.getGoodOut(good.index) - element.getGoodIn(good.index);
-
                             return Math.floor(value);
-                        },
-                        this.sharedGoodColumnTooltipFunction(good),
-                        null,
-                        false,
-                        good.getIconUrl(),
-                        ImageIconType.IMAGE_URL
-                    ));
-
+                        })
+                        .withCellTooltip(this.sharedGoodColumnTooltipFunction(good))
+                        .withHeaderImage(good.getIconUrl(), ImageIconType.IMAGE_URL)
+                        .withTooltip(good.getHumanName())
+                        .build()
+                    );
                 return this.getBaseColumnList().concat(cols);
             })
         ).subscribe(cols => {
             this.goodColumns = cols;
-            console.log(
-                `Found ${cols.length} goods columns for view mode ${viewMode} and category ${selectedGoodsCategory.key}`
-            );
         });
     }
 

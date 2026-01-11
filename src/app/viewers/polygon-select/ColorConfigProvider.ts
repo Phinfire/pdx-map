@@ -1,5 +1,3 @@
-import { RGB } from "../../../util/RGB";
-
 export class ColorConfigProvider {
 
     private readonly GEOMETRY_DEFAULT_COLOR = 0x666666;

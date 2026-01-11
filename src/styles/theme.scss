@@ -42,7 +42,7 @@ html {
     --dark-theme-background-color: rgb(32, 32, 32);
     --dark-theme-background-color-alt: rgb(40, 40, 48);
     --light-theme-text-color: rgb(0, 0, 0);
-    --light-theme-background-color: rgb(255, 255, 255);
+    --light-theme-background-color: rgb(255, 255, 240);
     --light-theme-background-color-alt: rgb(240, 240, 240);
 
     --mat-sys-surface: var(--background-color);
@@ -76,6 +76,8 @@ html {
     --mat-sys-secondary-container: var(--lighter-background-color);
     --mat-sys-on-secondary-container: var(--light-theme-text-color);
     --mat-sys-outline: var(--border-color);
+
+    --mat-sys-primary: rgb(0, 0, 215);
 }
 
 .dark-theme {

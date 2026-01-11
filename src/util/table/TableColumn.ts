@@ -17,42 +17,10 @@ export class TableColumn<T> implements ITableColumn<T> {
             null,
             false,
             undefined,
-            undefined
+            undefined,
+            null
         );
     };
-
-    public static wrapColumn<I,O>(column: TableColumn<I>, transform: (element: O) => I | null): TableColumn<O> {
-        return new TableColumn<O>(
-            column.def,
-            column.header,
-            column.tooltip,
-            column.sortable,
-            (element: O, index: number) => transform(element) != null ? column.cellValue(transform(element)!, index) : null,
-            (element: O, index: number) => transform(element) != null  ? column.cellTooltip(transform(element)!, index) : null,
-            column.subscript ? ((element: O) => {
-                const transformed = transform(element);
-                return transformed != null ? column.subscript!(transformed) : "";
-            }) : null,
-            column.isImage,
-            column.headerImage,
-            column.headerImageType
-        );
-    }
-
-    public static from<T>(header: string, cellValue: (element: T, index: number) => any, cellTooltip: (element: T, index: number) => string, headerImage?: string, headerImageType?: ImageIconType) {
-        return new TableColumn<T>(
-            header.toLowerCase().replace(/\s+/g, '_'),
-            header,
-            null,
-            true,
-            cellValue,
-            cellTooltip,
-            null,
-            headerImage != null,
-            headerImage,
-            headerImageType
-        );
-    }
 
     public readonly visibleCellValue: (element: T, index: number) => any;
     public readonly isImage: boolean;
@@ -67,13 +35,18 @@ export class TableColumn<T> implements ITableColumn<T> {
         public readonly subscript: ((element: T) => string) | null = null,
         isImage: boolean = false,
         headerImage?: string,
-        headerImageType?: ImageIconType
+        headerImageType?: ImageIconType,
+        private readonly cellValueTransform?: ((value: any) => any) | null
     ) {
         this.isImage = isImage;
         this.headerImage = headerImage;
         this.headerImageType = headerImageType;
         this.visibleCellValue = (element: T, index: number) => {
             const value = this.cellValue(element, index);
+            if (this.cellValueTransform) {
+                return this.cellValueTransform(value);
+            }
+
             if (this.isImage) {
                 return value;
             }
